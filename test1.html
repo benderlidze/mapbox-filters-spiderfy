@@ -274,12 +274,41 @@
         #menu a.active:hover {
             background: #3074a4;
         }
+
+        #filters {
+            position: absolute;
+            top: 20px;
+            right: 20px;
+        }
+
+        .filter-button {
+            background-color: #bdb9b9;
+            border: 1px solid gray;
+            border-radius: 3px;
+            padding: 5px;
+            margin: 5px;
+            display: flex;
+            min-width: 30px;
+            cursor: pointer;
+            justify-content: center;
+            align-items: center;
+        }
+
+        .filter-button:hover {
+            background-color: #e6e6e6;
+        }
+
+        .selected {
+            background-color: #e7e7e7;
+        }
     </style>
 </head>
 
 <body>
     <nav id="menu"></nav>
     <div id="map"></div>
+    <div id="filters"></div>
+
     <div class="autocomplete" style="width:300px;">
         <input id="myInput" type="text" name="myCountry" placeholder="Søk...">
     </div>
@@ -289,8 +318,14 @@
 </body>
 <script type="text/javascript">
 
+    const filtersDiv = document.getElementById("filters")
+    const filters = {};
+    const buttons = {};
+
     const SPIDERFY_FROM_ZOOM = 16;
     const mainData = [];
+    let filteredData = [];
+
     const colors = ["#8dd3c7", "#ffffb3", "#bebada", "#fb8072", "#80b1d3", "#fdb462", "#b3de69", "#fccde5", "#d9d9d9", "#bc80bd", "#ccebc5", "#ffed6f"];
     mapboxgl.accessToken = 'pk.eyJ1Ijoic29jcmF0YSIsImEiOiJjaXJxc2wzam0waGU5ZmZtODhqd2ttamdxIn0.1ZQEByXoDD7fGIa9lUHIqg';
 
@@ -338,10 +373,7 @@
 
             setTimeout(() => {
                 spiderLeg.mapboxMarker.setPopup(popup)
-                popup.setHTML(`
-                    ${data.Adresse}
-                    <div>ID_PRIS: ${data.ID_PRIS}</div>
-                `).addTo(map)
+                popup.setHTML(popupText(data)).addTo(map)
             }, 10);
 
         });
@@ -395,6 +427,22 @@
         });
 
         map.addLayer({
+            'id': 'app-name',
+            'type': 'symbol',
+            'source': 'pins',
+            'layout': {
+                'text-field': ['get', 'appName'],
+                'text-font': [
+                    'DIN Offc Pro Medium',
+                    'Arial Unicode MS Bold'
+                ],
+                'text-size': 12,
+                'text-offset': [0, -2],
+                'text-allow-overlap': false
+            }
+        });
+
+        map.addLayer({
             'id': 'cluster-pins-count',
             'type': 'symbol',
             'source': 'pins',
@@ -424,9 +472,21 @@
             spiderifier.unspiderfy();
         });
 
-
         d3.csv("https://docs.google.com/spreadsheets/d/e/2PACX-1vTcxo-SA79uvhGh0dY0Lojbya2mn0cEoK6QQzXPf77hw5_vBHS7OR7D26r1cRFBDg/pub?output=csv")
             .then(data => {
+
+                //fill empty coordinates from same addresses !IMP
+                data.forEach(i => {
+                    if (i.Latitude === "") {
+                        const p = data.filter(f => f.Adresse === i.Adresse && f.Latitude !== "")
+                        if (p.length > 0) {
+                            i.Latitude = p[0].Latitude
+                            i.Longitude = p[0].Longitude
+                        }
+                    }
+                })
+
+                mainData.push(...data);
                 showPins(data);
             })
 
@@ -442,14 +502,91 @@
     function showPins(data) {
         console.log('data!!!', data);
 
-        //group by addresses
-        const addresses = [...new Set(data.map(i => i.Adresse))].map(i => {
-            return { name: i, list: [], coord: { lat: '', lng: '' } }
+
+        //filters and buttons
+        buttons.ansvar = [...new Set(data.map(i => i['Ansvar']))].filter(i => i !== "")
+        buttons.rooms = [...new Set(data.map(i => i['Rom']))].filter(i => i !== "")
+        buttons.rent = [...new Set(data.map(i => i['Ledig ja/nei']))].filter(i => i !== "")
+        buildButtons("rooms")
+        buildButtons("ansvar")
+        buildButtons("rent")
+
+        updatePins()
+
+
+    }
+
+    function buildButtons(name) {
+
+        filtersDiv;
+        const div = document.createElement("div")
+        div.style.display = "flex"
+        div.style.flexDirection = "row"
+
+        buttons[name].sort().forEach(i => {
+            const button = document.createElement("div")
+            button.className = "filter-button";
+            button.innerHTML = i;
+            button.setAttribute(name, i);
+
+            button.addEventListener("click", () => {
+                if (button.classList.contains("selected")) {
+                    button.classList.remove("selected")
+                } else {
+                    button.classList.add("selected")
+                }
+
+                if (!filters.hasOwnProperty(name)) { filters[name] = [] };
+
+                const index = filters[name].indexOf(i);
+                if (index > -1) {
+                    filters[name].splice(index, 1);
+                } else {
+                    filters[name].push(i)
+                }
+                updatePins()
+            })
+            div.appendChild(button)
         })
-        data.map(i => {
+        filtersDiv.appendChild(div)
+
+    }
+
+    function updatePins() {
+        console.log('UPDATE PINS');
+
+        const filtered = mainData
+            .filter(i => {
+                if (filters.rooms && filters.rooms.length > 0) {
+                    return filters.rooms.includes(i['Rom']);
+                } else {
+                    return i
+                }
+            })
+            .filter(i => {
+                if (filters.ansvar && filters.ansvar.length > 0) {
+                    return filters.ansvar.includes(i['Ansvar']);
+                } else {
+                    return i
+                }
+            })
+            .filter(i => {
+                if (filters.rent && filters.rent.length > 0) {
+                    return filters.rent.includes(i['Ledig ja/nei']);
+                } else {
+                    return i
+                }
+            })
+
+
+        //group by addresses
+        const addresses = [...new Set(filtered.map(i => i.Adresse))].map(i => {
+            return { name: i, appName: "", list: [], coord: { lat: '', lng: '' } }
+        })
+        filtered.map(i => {
             const a = addresses.find(n => n.name === i.Adresse);
             if (a) {
-                console.log('HERE');
+                a.appName = i['Gård+L.nr'];
                 a.list.push(i)
                 if (i.Latitude !== "") {
                     a.coord = { lng: +i.Longitude, lat: +i.Latitude }
@@ -457,32 +594,32 @@
             }
         })
 
-        mainData.push(...addresses)
 
-        console.log('addresses', addresses);
+        filteredData.length = 0;
+        filteredData.push(...addresses);
 
-        collection = addresses.map(d => {
+        const collection = addresses.map(d => {
             return {
                 "type": "Feature",
                 "geometry": { "type": "Point", "coordinates": [d.coord.lng, d.coord.lat] },
                 "properties": {
                     count: d.list.length,
-                    addr: d.name
+                    addr: d.name,
+                    appName: d.appName,
+                    rooms: d.Rom
                 },
             }
         })
         console.log('collection', collection);
         map.getSource('pins').setData({ type: "FeatureCollection", features: collection })
-        autocomplete(document.getElementById("myInput"), mainData);
-    }
 
+        //!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!autocomplete(document.getElementById("myInput"), mainData);
+    }
 
     function mouseClick(e) {
 
-
         const pinData = e.features[0];
-        const f = mainData.find(d => d.name === pinData.properties.addr);
-        console.log('f', f);
+        const f = filteredData.find(d => d.name === pinData.properties.addr);
 
         if (f) {
 
@@ -501,14 +638,22 @@
                     closeOnClick: true,
                 })
                     .setLngLat(coordinates)
-                    .setHTML(`
-                    ${data.Adresse}
-                    <div>ID_PRIS: ${data.ID_PRIS}</div>
-                `)
+                    .setHTML(popupText(data))
                     .addTo(map)
 
             }
         }
+    }
+
+    function popupText(data) {
+
+        const text = `
+                    <h3>${data['Gård+L.nr']}</h3>
+                    <div>Adresse: ${data.Adresse}</div>
+                    <div>ID_PRIS: ${data.ID_PRIS}</div>
+                    <div>Rom: ${data['Rom']}</div>
+        `;
+        return text
     }
 
     function mouseMove(e) {
