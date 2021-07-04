@@ -315,19 +315,14 @@
         var feature = spiderLeg.feature;
         var popup;
 
-        
         pinElem.className = pinElem.className + ' fa-stack fa-lg';
         pinElem.innerHTML = '<i class="circle-icon fa fa-circle fa-stack-2x"></i>' +
             '<i class="type-icon fa fa-' + feature.type + ' fa-stack-1x"></i>'
         pinElem.style.color = feature.color;
 
         pinElem.addEventListener('click', function (e) {
-            console.log('CLICK', e);
-            console.log('CLICK', spiderLeg);
-            console.log('CLICK', MapboxglSpiderifier.popupOffsetForSpiderLeg(spiderLeg));
-
+            e.stopPropagation();
             const offset = MapboxglSpiderifier.popupOffsetForSpiderLeg(spiderLeg);
-
             Object.entries(offset).forEach(i => {//MOVE POPUP HIGHER
                 i[1][1] -= 35
             })
@@ -345,6 +340,7 @@
                 spiderLeg.mapboxMarker.setPopup(popup)
                 popup.setHTML(`
                     ${data.Adresse}
+                    <div>ID_PRIS: ${data.ID_PRIS}</div>
                 `).addTo(map)
             }, 10);
 
@@ -355,7 +351,7 @@
 
         map.addSource('pins', {
             type: 'geojson',
-            cluster: true,
+            cluster: false,
             clusterRadius: 50,
             clusterMaxZoom: 25,
             data: {
@@ -364,33 +360,37 @@
             }
         });
 
-        map.addLayer({
-            'id': 'pins',
-            'type': 'symbol',
-            'source': 'pins',
-            'layout': {
-                "icon-image": "marker-15"
-            },
-            'filter': ['all', ['!has', 'point_count']]
-        });
+        // map.addLayer({
+        //     'id': 'pins',
+        //     'type': 'symbol',
+        //     'source': 'pins',
+        //     'layout': {
+        //         "icon-image": "marker-15"
+        //     },
+        // });
 
 
         map.addLayer({
             'id': 'cluster-pins',
             'type': 'circle',
             'source': 'pins',
-            'filter': ['all', ['has', 'point_count']],
             'paint': {
                 'circle-color': {
                     type: 'interval',
-                    property: "point_count",
+                    property: "count",
                     stops: [
-                        [0, '#51bbd6'],
-                        [20, '#f1f075'],
-                        [150, '#f28cb1']
+                        [1, '#51bbd6'],
+                        [2, 'orange'],
                     ]
                 },
-                'circle-radius': 18
+                'circle-radius': {
+                    type: 'interval',
+                    property: "count",
+                    stops: [
+                        [1, 8],
+                        [2, 14],
+                    ]
+                },
             }
         });
 
@@ -399,26 +399,27 @@
             'type': 'symbol',
             'source': 'pins',
             'layout': {
-                'text-field': '{point_count}',
+                'text-field': ['get', 'count'],
                 'text-font': [
                     'DIN Offc Pro Medium',
                     'Arial Unicode MS Bold'
                 ],
-                'text-size': 12
+                'text-size': 12,
+                //'text-allow-overlap': true
             }
         });
-        map.on('mouseenter', 'pins', mouseEnter);
-        map.on('mouseleave', 'pins', mouseLeave);
-        map.on('mouseenter', 'cluster-pins', mouseEnter);
-        map.on('mouseleave', 'cluster-pins', mouseEnter);
+        // map.on('mouseenter', 'pins', mouseEnter);
+        // map.on('mouseleave', 'pins', mouseLeave);
 
-        map.on('click', 'pins', (e) => {
-            var coordinates = e.features[0].geometry.coordinates.slice();
-            var data = e.features[0].properties;
-            showPopup(coordinates, data)
+
+        map.on('click', () => {
+            spiderifier.unspiderfy();
         });
+        map.on('click', 'cluster-pins', mouseClick);
+        map.on('mouseenter', 'cluster-pins', mouseEnter);
+        map.on('mouseleave', 'cluster-pins', mouseLeave);
 
-        map.on('click', mouseClick);
+
         map.on('zoomstart', function () {
             spiderifier.unspiderfy();
         });
@@ -430,26 +431,6 @@
             })
 
     });
-
-    function showPopup(coordinates, data) {
-
-        console.log(coordinates, data);
-
-        let img = '';
-        if (data.picture !== "") {
-            img = `<div><img src="${data.picture}" style="width:200px;"></div>`;
-        }
-
-        const description = `
-                      ${data.Adresse}
-                `;
-
-        new mapboxgl.Popup()
-            .setLngLat(coordinates)
-            .setHTML(description)
-            .addTo(map);
-
-    }
 
     function mouseEnter() {
         map.getCanvas().style.cursor = 'pointer';
@@ -476,14 +457,17 @@
             }
         })
 
+        mainData.push(...addresses)
 
-        collection = data.map(d => {
-            mainData.push(d)
+        console.log('addresses', addresses);
+
+        collection = addresses.map(d => {
             return {
                 "type": "Feature",
-                "geometry": { "type": "Point", "coordinates": [+d['Longitude'], +d['Latitude']] },
+                "geometry": { "type": "Point", "coordinates": [d.coord.lng, d.coord.lat] },
                 "properties": {
-                    ...d
+                    count: d.list.length,
+                    addr: d.name
                 },
             }
         })
@@ -492,31 +476,38 @@
         autocomplete(document.getElementById("myInput"), mainData);
     }
 
+
     function mouseClick(e) {
-        console.log('CLUSTER CLICK',);
-        var features = map.queryRenderedFeatures(e.point, {
-            layers: ['cluster-pins']
-        });
-        //spiderifier.unspiderfy();
-        if (!features.length) {
-            return;
-        } else if (map.getZoom() < SPIDERFY_FROM_ZOOM) {
-            map.easeTo({ center: e.lngLat, zoom: map.getZoom() + 2 });
-        } else {
-            map.getSource('pins').getClusterLeaves(
-                features[0].properties.cluster_id,
-                100,
-                0,
-                function (err, leafFeatures) {
-                    if (err) {
-                        return console.error('error while getting leaves of a cluster', err);
-                    }
-                    var markers = _.map(leafFeatures, function (leafFeature) {
-                        return leafFeature.properties;
-                    });
-                    spiderifier.spiderfy(features[0].geometry.coordinates, markers);
-                }
-            );
+
+
+        const pinData = e.features[0];
+        const f = mainData.find(d => d.name === pinData.properties.addr);
+        console.log('f', f);
+
+        if (f) {
+
+            if (f.list.length > 1) {
+
+                const features = f.list
+                spiderifier.spiderfy([f.coord.lng, f.coord.lat], features);
+
+            } else {
+
+                //it is a simple marker with 1 room - open popup
+                const data = f.list[0]
+                var coordinates = e.features[0].geometry.coordinates.slice();
+                popup = new mapboxgl.Popup({
+                    closeButton: true,
+                    closeOnClick: true,
+                })
+                    .setLngLat(coordinates)
+                    .setHTML(`
+                    ${data.Adresse}
+                    <div>ID_PRIS: ${data.ID_PRIS}</div>
+                `)
+                    .addTo(map)
+
+            }
         }
     }
 
