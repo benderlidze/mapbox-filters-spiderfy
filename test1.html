@@ -32,6 +32,13 @@
             background-image: url(https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.0.0-beta.2/images/marker-icon.png);
         }
 
+        .green {
+            background-image: url(https://raw.githubusercontent.com/pointhi/leaflet-color-markers/master/img/marker-icon-green.png) !important;
+        }
+
+        .red {
+            background-image: url(https://raw.githubusercontent.com/pointhi/leaflet-color-markers/master/img/marker-icon-red.png) !important;
+        }
 
         body {
             margin: 0;
@@ -171,9 +178,6 @@
             }
         }
 
-
-
-
         /*the container must be positioned relative:*/
         .autocomplete {
             position: absolute;
@@ -183,7 +187,8 @@
         }
 
         input {
-            border: 1px solid transparent;
+            border: 1px solid rgb(133, 133, 133);
+
             background-color: #f1f1f1;
             padding: 10px;
             font-size: 16px;
@@ -307,7 +312,9 @@
 <body>
     <nav id="menu"></nav>
     <div id="map"></div>
-    <div id="filters"></div>
+    <div id="filters">
+        <div id="clearFilters" class="filter-button">Clear filters</div>
+    </div>
 
     <div class="autocomplete" style="width:300px;">
         <input id="myInput" type="text" name="myCountry" placeholder="Søk...">
@@ -321,6 +328,7 @@
     const filtersDiv = document.getElementById("filters")
     const filters = {};
     const buttons = {};
+    let searchData = [];
 
     const SPIDERFY_FROM_ZOOM = 16;
     const mainData = [];
@@ -350,10 +358,17 @@
         var feature = spiderLeg.feature;
         var popup;
 
-        pinElem.className = pinElem.className + ' fa-stack fa-lg';
-        pinElem.innerHTML = '<i class="circle-icon fa fa-circle fa-stack-2x"></i>' +
-            '<i class="type-icon fa fa-' + feature.type + ' fa-stack-1x"></i>'
-        pinElem.style.color = feature.color;
+        console.log('spiderLeg', spiderLeg);
+
+
+
+        if (feature['Ledig ja/nei'] === 'Utleid') {
+            pinElem.className = pinElem.className + ' red';
+        }
+        if (feature['Ledig ja/nei'] === 'Ledig') {
+            pinElem.className = pinElem.className + ' green';
+        }
+
 
         pinElem.addEventListener('click', function (e) {
             e.stopPropagation();
@@ -361,7 +376,6 @@
             Object.entries(offset).forEach(i => {//MOVE POPUP HIGHER
                 i[1][1] -= 35
             })
-
             const data = spiderLeg.feature
             popup = new mapboxgl.Popup({
                 closeButton: true,
@@ -380,6 +394,60 @@
     }
 
     map.on('load', function () {
+
+
+        var layers = map.getStyle().layers;
+        var labelLayerId;
+        for (var i = 0; i < layers.length; i++) {
+            if (layers[i].type === 'symbol' && layers[i].layout['text-field']) {
+                labelLayerId = layers[i].id;
+                break;
+            }
+        }
+
+        // The 'building' layer in the Mapbox Streets
+        // vector tileset contains building height data
+        // from OpenStreetMap.
+        map.addLayer(
+            {
+                'id': 'add-3d-buildings',
+                'source': 'composite',
+                'source-layer': 'building',
+                'filter': ['==', 'extrude', 'true'],
+                'type': 'fill-extrusion',
+                'minzoom': 15,
+                'paint': {
+                    'fill-extrusion-color': '#aaa',
+
+                    // Use an 'interpolate' expression to
+                    // add a smooth transition effect to
+                    // the buildings as the user zooms in.
+                    'fill-extrusion-height': [
+                        'interpolate',
+                        ['linear'],
+                        ['zoom'],
+                        15,
+                        0,
+                        15.05,
+                        ['get', 'height']
+                    ],
+                    'fill-extrusion-base': [
+                        'interpolate',
+                        ['linear'],
+                        ['zoom'],
+                        15,
+                        0,
+                        15.05,
+                        ['get', 'min_height']
+                    ],
+                    'fill-extrusion-opacity': 0.6
+                }
+            },
+
+            labelLayerId
+        );
+
+
 
         map.addSource('pins', {
             type: 'geojson',
@@ -407,14 +475,7 @@
             'type': 'circle',
             'source': 'pins',
             'paint': {
-                'circle-color': {
-                    type: 'interval',
-                    property: "count",
-                    stops: [
-                        [1, '#51bbd6'],
-                        [2, 'orange'],
-                    ]
-                },
+                'circle-color': ['get', 'color'],
                 'circle-radius': {
                     type: 'interval',
                     property: "count",
@@ -492,6 +553,20 @@
 
     });
 
+    document.getElementById("clearFilters").addEventListener("click", () => {
+        console.log('filters', filters);
+        Object.keys(filters).forEach(key => {
+            delete filters[key];
+        })
+        updatePins()
+
+
+        var list = document.getElementsByClassName("filter-button")
+        for (let item of list) {
+            item.classList.remove("selected")
+        }
+    })
+
     function mouseEnter() {
         map.getCanvas().style.cursor = 'pointer';
     }
@@ -500,8 +575,6 @@
     }
 
     function showPins(data) {
-        console.log('data!!!', data);
-
 
         //filters and buttons
         buttons.ansvar = [...new Set(data.map(i => i['Ansvar']))].filter(i => i !== "")
@@ -512,7 +585,6 @@
         buildButtons("rent")
 
         updatePins()
-
 
     }
 
@@ -553,7 +625,6 @@
     }
 
     function updatePins() {
-        console.log('UPDATE PINS');
 
         const filtered = mainData
             .filter(i => {
@@ -581,7 +652,7 @@
 
         //group by addresses
         const addresses = [...new Set(filtered.map(i => i.Adresse))].map(i => {
-            return { name: i, appName: "", list: [], coord: { lat: '', lng: '' } }
+            return { name: i, appName: "", list: [], coord: { lat: '', lng: '' }, }
         })
         filtered.map(i => {
             const a = addresses.find(n => n.name === i.Adresse);
@@ -598,7 +669,21 @@
         filteredData.length = 0;
         filteredData.push(...addresses);
 
+
         const collection = addresses.map(d => {
+            console.log('d', d);
+            let color = 'red';
+            if (d.list.length === 1) {
+                if (d.list[0]['Ledig ja/nei'] === 'Utleid') {
+                    color = 'red'
+                }
+                if (d.list[0]['Ledig ja/nei'] === 'Ledig') {
+                    color = 'green'
+                }
+            } else {
+                color = 'orange'
+            }
+
             return {
                 "type": "Feature",
                 "geometry": { "type": "Point", "coordinates": [d.coord.lng, d.coord.lat] },
@@ -606,14 +691,24 @@
                     count: d.list.length,
                     addr: d.name,
                     appName: d.appName,
-                    rooms: d.Rom
+                    rooms: d.Rom,
+                    color: color
                 },
             }
         })
-        console.log('collection', collection);
+        //console.log('collection', collection);
         map.getSource('pins').setData({ type: "FeatureCollection", features: collection })
 
-        //!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!autocomplete(document.getElementById("myInput"), mainData);
+
+        searchData = mainData.map((i, key) => {
+            //return `${i['Adresse']}`;
+            return {
+                text: `${i['Adresse']} <br>${i['ID_PRIS']}<br>${i['ID_SAKSBEHANDLER']}<br>${i['Gård+L.nr']}`,
+                coord: [i.Longitude, i.Latitude]
+            }
+        })
+        //console.log('searchData', searchData);
+        autocomplete(document.getElementById("myInput"), searchData);
     }
 
     function mouseClick(e) {
@@ -652,7 +747,7 @@
                     <div>Adresse: ${data.Adresse}</div>
                     <div>ID_PRIS: ${data.ID_PRIS}</div>
                     <div>Rom: ${data['Rom']}</div>
-        `;
+                    `;
         return text
     }
 
@@ -666,7 +761,7 @@
 
     function autocomplete(inp, data) {
         /*the autocomplete function takes two arguments,
-        the text field element and an array of possible autocompleted values:*/
+                    the text field element and an array of possible autocompleted values:*/
         var currentFocus;
         /*execute a function when someone writes in the text field:*/
         inp.addEventListener("input", function (e) {
@@ -683,69 +778,75 @@
             this.parentNode.appendChild(a);
 
 
-            const arr = data.map(i => i.bygningsnavn)
+            const arr = data.map(i => i.text)
             let counter = 0;
 
             /*for each item in the array...*/
             for (i = 0; i < arr.length; i++) {
 
                 /*check if the item starts with the same letters as the text field value:*/
-                if (arr[i].substr(0, val.length).toUpperCase() == val.toUpperCase()) {
+                //if (arr[i].substr(0, val.length).toUpperCase() == val.toUpperCase()) {
+
+                const search = arr[i].toUpperCase().search(val.toUpperCase())
+                if (search > -1) {
                     /*create a DIV element for each matching element:*/
                     b = document.createElement("DIV");
                     /*make the matching letters bold:*/
-                    b.innerHTML = "<strong>" + arr[i].substr(0, val.length) + "</strong>";
-                    b.innerHTML += arr[i].substr(val.length);
+
+                    const text = arr[i].substr(0, search) + '<b>' + arr[i].substr(search, val.length) + '</b>' + arr[i].substr((search + val.length), arr[i].length)
+
+                    //b.innerHTML = "<strong>" + arr[i].substr(0, val.length) + "</strong>";
+                    //b.innerHTML += arr[i].substr(val.length);
+                    b.innerHTML = text
                     /*insert a input field that will hold the current array item's value:*/
                     b.innerHTML += "<input type='hidden' value='" + arr[i] + "'>";
                     /*execute a function when someone clicks on the item value (DIV element):*/
                     b.addEventListener("click", function (e) {
                         /*insert the value for the autocomplete text field:*/
-                        inp.value = this.getElementsByTagName("input")[0].value;
+                        inp.value = this.getElementsByTagName("input")[0].value.replaceAll('<br>', ' ');
                         /*close the list of autocompleted values,
                         (or any other open lists of autocompleted values:*/
                         closeAllLists();
 
-                        console.log('inp.value', inp.value);
-
-                        const point = data.find(i => i.bygningsnavn === inp.value);
+                        const point = data.find(i => i.text === inp.value);
                         if (point) {
                             map.flyTo({
-                                center: [+point.lon, +point.lat],
-                                zoom: 13
+                                center: point.coord,
+                                zoom: 19,
+                                pitch: 50
                             })
 
-                            map.setFilter('labels', [
-                                'match',
-                                ['get', 'bygningsnavn'],
-                                inp.value,
-                                true,
-                                false
-                            ])
-                            map.setFilter('selected', [
-                                'match',
-                                ['get', 'bygningsnavn'],
-                                inp.value,
-                                true,
-                                false
-                            ])
+                            // map.setFilter('labels', [
+                            //     'match',
+                            //     ['get', 'bygningsnavn'],
+                            //     inp.value,
+                            //     true,
+                            //     false
+                            // ])
+                            // map.setFilter('selected', [
+                            //     'match',
+                            //     ['get', 'bygningsnavn'],
+                            //     inp.value,
+                            //     true,
+                            //     false
+                            // ])
 
-                            map.once("idle", () => {
-                                console.log('done');
-                                var mapBounds = map.getBounds()
-                                const query = map.queryRenderedFeatures([map.project(mapBounds.getSouthWest()), map.project(mapBounds.getNorthEast())], { layers: ['pins'] });
+                            // map.once("idle", () => {
+                            //     console.log('done');
+                            //     var mapBounds = map.getBounds()
+                            //     const query = map.queryRenderedFeatures([map.project(mapBounds.getSouthWest()), map.project(mapBounds.getNorthEast())], { layers: ['pins'] });
 
-                                const names = [...new Set(query.map(i => i.properties.bygningsnavn))]
+                            //     const names = [...new Set(query.map(i => i.properties.bygningsnavn))]
 
-                                console.log('names', names);
-                                map.setFilter('labels', [
-                                    'match',
-                                    ['get', 'bygningsnavn'],
-                                    names,
-                                    true,
-                                    false
-                                ])
-                            })
+                            //     console.log('names', names);
+                            //     map.setFilter('labels', [
+                            //         'match',
+                            //         ['get', 'bygningsnavn'],
+                            //         names,
+                            //         true,
+                            //         false
+                            //     ])
+                            // })
                         }
 
                     });
@@ -800,7 +901,7 @@
         }
         function closeAllLists(elmnt) {
             /*close all autocomplete lists in the document,
-            except the one passed as an argument:*/
+                        except the one passed as an argument:*/
             var x = document.getElementsByClassName("autocomplete-items");
             for (var i = 0; i < x.length; i++) {
                 if (elmnt != x[i] && elmnt != inp) {
