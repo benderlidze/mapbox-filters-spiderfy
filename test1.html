@@ -282,8 +282,8 @@
 
         #filters {
             position: absolute;
-            top: 20px;
-            right: 20px;
+            top: 70px;
+            left: 20px;
         }
 
         .filter-button {
@@ -300,11 +300,11 @@
         }
 
         .filter-button:hover {
-            background-color: #e6e6e6;
+            background-color: #aee1ff;
         }
 
         .selected {
-            background-color: #e7e7e7;
+            background-color: skyblue;
         }
     </style>
 </head>
@@ -598,7 +598,7 @@
         buttons[name].sort().forEach(i => {
             const button = document.createElement("div")
             button.className = "filter-button";
-            button.innerHTML = i;
+            button.innerHTML = (name === 'rooms') ? `${i}-roms` : i;
             button.setAttribute(name, i);
 
             button.addEventListener("click", () => {
@@ -671,6 +671,7 @@
 
 
         const collection = addresses.map(d => {
+
             let color = 'red';
             if (d.list.length === 1) {
                 if (d.list[0]['Ledig ja/nei'] === 'Utleid') {
@@ -691,11 +692,12 @@
                     addr: d.name,
                     appName: d.appName,
                     rooms: d.Rom,
-                    color: color
+                    color: color,
+                    ...d.list[0]
                 },
             }
         })
-        //console.log('collection', collection);
+        // console.log('collection', collection);
         map.getSource('pins').setData({ type: "FeatureCollection", features: collection })
 
 
@@ -741,13 +743,26 @@
 
     function popupText(data) {
 
+        let visning = `Ingen 360-visning`;
+        if (data['360-visning']) {
+            visning = `<a href="${data['360-visning']}"><b>360-visning</b></a>`;
+        }
+
         const text = `
                     <h3>${data['Gård+L.nr']}</h3>
                     <div>Adresse: ${data.Adresse}</div>
+                    <div>L.Nr: ${data['L.Nr']}</div>
+                    <div>Tilgjengelighet: ${data['Ledig ja/nei']}</div>
                     <div>ID_PRIS: ${data.ID_PRIS}</div>
-                    <div>Rom: ${data['Rom']}</div>
+                    <div>ID_Saksbehandler: ${data['ID_SAKSBEHANDLER']}</div>
+                    <div>ID_Eiendom: ${data.ID_EIENDOM}</div>
+                    <div>K.nr: ${data['KNR']}</div>
+                    <div>Ansvar: ${data['Ansvar']}</div>
+                    <hr>
+                    ${visning}
                     `;
         return text
+        // <div>Rom: ${data['Rom']}</div>
     }
 
     function mouseMove(e) {
@@ -807,7 +822,7 @@
                         (or any other open lists of autocompleted values:*/
                         closeAllLists();
 
-                        const point = data.find(i => i.text ===  this.getElementsByTagName("input")[0].value);
+                        const point = data.find(i => i.text === this.getElementsByTagName("input")[0].value);
                         if (point) {
                             map.flyTo({
                                 center: point.coord,
