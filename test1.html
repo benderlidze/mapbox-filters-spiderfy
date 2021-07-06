@@ -807,7 +807,7 @@
                         (or any other open lists of autocompleted values:*/
                         closeAllLists();
 
-                        const point = data.find(i => i.text === inp.value);
+                        const point = data.find(i => i.text ===  this.getElementsByTagName("input")[0].value);
                         if (point) {
                             map.flyTo({
                                 center: point.coord,
