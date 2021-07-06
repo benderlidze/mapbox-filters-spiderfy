@@ -360,8 +360,6 @@
 
         console.log('spiderLeg', spiderLeg);
 
-
-
         if (feature['Ledig ja/nei'] === 'Utleid') {
             pinElem.className = pinElem.className + ' red';
         }
@@ -369,6 +367,10 @@
             pinElem.className = pinElem.className + ' green';
         }
 
+        const div = document.createElement("div")
+        div.innerHTML = feature['Gård+L.nr'];
+        div.style.cssText = 'position: relative;top: -20px;text-align: center;left: -20px;'
+        pinElem.appendChild(div)
 
         pinElem.addEventListener('click', function (e) {
             e.stopPropagation();
@@ -657,7 +659,8 @@
         filtered.map(i => {
             const a = addresses.find(n => n.name === i.Adresse);
             if (a) {
-                a.appName = i['Gård+L.nr'];
+                //a.appName = i['Gård+L.nr'];
+                a.appName = i['Gård'];
                 a.list.push(i)
                 if (i.Latitude !== "") {
                     a.coord = { lng: +i.Longitude, lat: +i.Latitude }
