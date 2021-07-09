@@ -364,11 +364,15 @@
       padding: 20px;
     }
 
-    .sideItem{
-      padding:10px;
-      margin:10px;
-      border:1px solid #ccc;
+    .sideItem {
+      padding: 10px;
+      margin: 10px;
+      border: 1px solid #ccc;
+      cursor: pointer;
+    }
 
+    .sideItem:hover {
+      background-color: #c9c9c9;
     }
 
     /* On smaller screens, where height is less than 450px, change the style of the sidenav (less padding and a smaller font size) */
@@ -415,6 +419,7 @@
   const SPIDERFY_FROM_ZOOM = 16;
   const mainData = [];
   let filteredData = [];
+  let spiderData;
 
   const colors = ["#8dd3c7", "#ffffb3", "#bebada", "#fb8072", "#80b1d3", "#fdb462", "#b3de69", "#fccde5", "#d9d9d9", "#bc80bd", "#ccebc5", "#ffed6f"];
   mapboxgl.accessToken = 'pk.eyJ1Ijoic29jcmF0YSIsImEiOiJjaXJxc2wzam0waGU5ZmZtODhqd2ttamdxIn0.1ZQEByXoDD7fGIa9lUHIqg';
@@ -441,17 +446,19 @@
     var popup;
 
     console.log('spiderLeg', spiderLeg);
+    console.log('feature', feature);
+    // spiderData = spiderLeg;
 
     if (feature['Ledig ja/nei'] === 'Utleid') {
-      pinElem.className = pinElem.className + ' red';
+      pinElem.className = pinElem.className + ' red ' + feature['Gård+L.nr'];
     }
     if (feature['Ledig ja/nei'] === 'Ledig') {
-      pinElem.className = pinElem.className + ' green';
+      pinElem.className = pinElem.className + ' green ' + feature['Gård+L.nr'];
     }
 
     const div = document.createElement("div")
-    div.innerHTML = feature['Gård+L.nr'];
-    div.style.cssText = 'position: relative;top: -20px;text-align: center;left: -20px;'
+    div.innerHTML = feature['L.Nr'];
+    div.style.cssText = 'position: relative;top: -20px;text-align: center;'
     pinElem.appendChild(div)
 
     pinElem.addEventListener('click', function (e) {
@@ -804,24 +811,24 @@
 
     if (f) {
 
+      openNav()
+
       if (f.list.length > 1) {
 
         const features = f.list
         spiderifier.spiderfy([f.coord.lng, f.coord.lat], features);
 
-        openNav()
+
 
         console.log(features);
-        const side = features.map(i=>{
-
-          return `<div class="sideItem">
-
-              <div>P_rom: ${i['P_rom']}</div>
-              <div>L.Nr:${i['L.Nr']}</div>
-              <div>${i['Adresse']}</div>
-            </div>`
+        console.log('pinData', pinData);
+        const side = features.map(i => { //side bar content 
+          return `<div class="sideItem" id="${i['Gård+L.nr']}">
+            <div class="sideBarItem">${i['Gård+L.nr']}</div>
+          </div>`
         }).join("")
         sideBarContent.innerHTML = side
+
 
       } else {
 
@@ -836,9 +843,27 @@
           .setHTML(popupText(data))
           .addTo(map)
 
+        console.log(data);
+        sideBarContent.innerHTML = `<div class="sideItem" id="${data['Gård+L.nr']}">
+            <div class="sideBarItem">${data['Gård+L.nr']}</div>
+          </div>`
       }
+
+
+
+
     }
   }
+
+  document.addEventListener("click", (e) => {
+    console.log(e.target.closest("div.eItem"));
+
+    if (e.target.closest("div.sideItem")) {
+      const id = e.target.closest("div.sideItem").id
+      console.log(id);
+      document.querySelector("." + id).click()
+    }
+  })
 
   function popupText(data) {
 
