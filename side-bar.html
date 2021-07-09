@@ -1,0 +1,1042 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+  <meta http-equiv="content-type" content="text/html; charset=UTF-8">
+  <meta name="robots" content="noindex, nofollow">
+  <meta name="googlebot" content="noindex, nofollow">
+  <script src="https://api.mapbox.com/mapbox-gl-js/v2.3.0/mapbox-gl.js"></script>
+  <link href="https://api.mapbox.com/mapbox-gl-js/v2.3.0/mapbox-gl.css" rel="stylesheet" />
+  <script src="https://d3js.org/d3.v5.min.js"></script>
+
+  <script type="text/javascript" src="https://bewithjonam.github.io/mapboxgl-spiderifier/index.js"></script>
+  <link rel="stylesheet" type="text/css" href="https://bewithjonam.github.io/mapboxgl-spiderifier/index.css">
+
+  <script type="text/javascript" src="https://cdnjs.cloudflare.com/ajax/libs/lodash.js/4.17.2/lodash.js"></script>
+  <title>Mapbox gl spiderifier</title>
+
+  <style type="text/css">
+    #map {
+      position: absolute;
+      top: 0;
+      bottom: 0;
+      width: 100%;
+    }
+
+    .spidered-marker .icon-div {
+      position: relative;
+      width: 25px;
+      height: 41px;
+      margin-left: -11.5px;
+      margin-top: -38.5px;
+      background-image: url(https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.0.0-beta.2/images/marker-icon.png);
+    }
+
+    .green {
+      background-image: url(https://raw.githubusercontent.com/pointhi/leaflet-color-markers/master/img/marker-icon-green.png) !important;
+    }
+
+    .red {
+      background-image: url(https://raw.githubusercontent.com/pointhi/leaflet-color-markers/master/img/marker-icon-red.png) !important;
+    }
+
+    body {
+      margin: 0;
+      padding: 0;
+      font-family: Helvetica Neue, Arial, Helvetica, sans-serif;
+    }
+
+    h3 {
+      padding: 0;
+      margin: 0;
+      color: #2f2f2f;
+      display: block;
+      font-weight: bold;
+      font: 20px Helvetica Neue, Arial, Helvetica, sans-serif;
+    }
+
+    .map-overlay {
+      position: absolute;
+      top: 140px;
+      left: 140px;
+      background: rgba(255, 255, 255, 0.8);
+      font-family: Arial, sans-serif;
+      overflow-y: overlay;
+      box-shadow: 0 0px 0px rgba(0, 0, 0, 0.5);
+      height: 550px;
+      width: 350px;
+      display: none;
+    }
+
+    #title {
+      position: absolute;
+      top: 5px;
+      left: 10px;
+      color: #2f2f2f;
+
+    }
+
+    #legend {
+      position: absolute;
+      top: 45px;
+      left: 10px;
+    }
+
+    #menuIcon {
+      position: absolute;
+      top: 45px;
+      left: 10px;
+    }
+
+    #map {
+      position: absolute;
+      top: 0;
+      bottom: 0;
+      width: 100%;
+    }
+
+    .grid-container {
+      display: grid;
+      grid-template-columns: auto auto;
+    }
+
+    .grid-item {
+      /* background-color: rgba(255, 255, 255, 0.8); */
+      border: 0px solid rgba(0, 0, 0, 0.8);
+      padding: 10px;
+      font-size: 30px;
+      text-align: center;
+    }
+
+    button:focus {
+      outline: none;
+    }
+
+    .imgbtn {
+      padding: 0px;
+      margin: 1px;
+      width: 100px;
+      height: 100px;
+      background-position: center;
+      /* Center the image */
+      background-repeat: no-repeat;
+      /* Do not repeat the image */
+      background-size: cover;
+      cursor: pointer;
+      filter: grayscale(100%);
+      background-color: transparent;
+    }
+
+
+    .selected {
+
+      filter: grayscale(0%)
+    }
+
+    #logo {
+      position: absolute;
+      z-index: 1000;
+      bottom: 0px;
+      right: 0px;
+      padding: 20px;
+    }
+
+    #logo img {
+      width: 300px;
+    }
+
+    /* .mapboxgl-popup-content {
+            max-height: 600px !important;
+            overflow-y: auto;
+            width: 400px;
+        } */
+
+    @media screen and (max-width: 992px) {
+      .imgbtn {
+        width: 73px;
+        height: 73px;
+      }
+
+      #legend {
+        position: absolute;
+        top: 45px;
+        left: 10px;
+      }
+
+      .mapboxgl-popup-content {
+        max-height: 600px !important;
+        overflow-y: auto;
+        width: 300px !important;
+      }
+
+      .mapboxgl-popup {
+        z-index: 1000
+      }
+
+      #logo img {
+        width: 200px;
+      }
+    }
+
+    /*the container must be positioned relative:*/
+    .autocomplete {
+      position: absolute;
+      display: inline-block;
+      top: 20px;
+      left: 20px;
+    }
+
+    input {
+      border: 1px solid rgb(133, 133, 133);
+
+      background-color: #f1f1f1;
+      padding: 10px;
+      font-size: 16px;
+    }
+
+    input[type=text] {
+      background-color: #f1f1f1;
+      width: 100%;
+    }
+
+    input[type=submit] {
+      background-color: DodgerBlue;
+      color: #fff;
+      cursor: pointer;
+    }
+
+    .autocomplete-items {
+      position: absolute;
+      border: 1px solid #d4d4d4;
+      border-bottom: none;
+      border-top: none;
+      z-index: 99;
+      /*position the autocomplete items to be the same width as the container:*/
+      top: 100%;
+      left: 0;
+      right: 0;
+    }
+
+    .autocomplete-items div {
+      padding: 10px;
+      cursor: pointer;
+      background-color: #fff;
+      border-bottom: 1px solid #d4d4d4;
+    }
+
+    /*when hovering an item:*/
+    .autocomplete-items div:hover {
+      background-color: #e9e9e9;
+    }
+
+    /*when navigating through the items using the arrow keys:*/
+    .autocomplete-active {
+      background-color: DodgerBlue !important;
+      color: #ffffff;
+    }
+
+
+
+
+    #menu {
+      background: #fff;
+      position: absolute;
+      z-index: 1;
+      top: 10px;
+      right: 10px;
+      border-radius: 3px;
+      width: 120px;
+      border: 1px solid rgba(0, 0, 0, 0.4);
+      font-family: 'Open Sans', sans-serif;
+    }
+
+    #menu a {
+      font-size: 13px;
+      color: #404040;
+      display: block;
+      margin: 0;
+      padding: 0;
+      padding: 10px;
+      text-decoration: none;
+      border-bottom: 1px solid rgba(0, 0, 0, 0.25);
+      text-align: center;
+    }
+
+    #menu a:last-child {
+      border: none;
+    }
+
+    #menu a:hover {
+      background-color: #f8f8f8;
+      color: #404040;
+    }
+
+    #menu a.active {
+      background-color: #3887be;
+      color: #ffffff;
+    }
+
+    #menu a.active:hover {
+      background: #3074a4;
+    }
+
+    #filters {
+      position: absolute;
+      top: 70px;
+      left: 20px;
+    }
+
+    #clearFilters {
+      width: 100px;
+    }
+
+    .filter-button {
+      background-color: #bdb9b9;
+      border: 1px solid gray;
+      border-radius: 3px;
+      padding: 5px;
+      margin: 5px;
+      display: flex;
+      min-width: 30px;
+      cursor: pointer;
+      justify-content: center;
+      align-items: center;
+    }
+
+    .filter-button:hover {
+      background-color: #aee1ff;
+    }
+
+    .selected {
+      background-color: skyblue;
+    }
+
+    /* The side navigation menu */
+    .sidenav {
+      height: 100%;
+      /* 100% Full-height */
+      width: 0;
+      /* 0 width - change this with JavaScript */
+      position: fixed;
+      /* Stay in place */
+      z-index: 1;
+      /* Stay on top */
+      top: 0;
+      /* Stay at the top */
+      right: 0;
+      background-color: rgb(160, 160, 160);
+      /* Black*/
+      overflow-x: hidden;
+      /* Disable horizontal scroll */
+      padding-top: 60px;
+      /* Place content 60px from the top */
+      transition: 0.5s;
+      /* 0.5 second transition effect to slide in the sidenav */
+    }
+
+    /* The navigation menu links */
+    .sidenav a {
+      padding: 8px 8px 8px 32px;
+      text-decoration: none;
+      font-size: 25px;
+      color: #818181;
+      display: block;
+      transition: 0.3s;
+    }
+
+    /* When you mouse over the navigation links, change their color */
+    .sidenav a:hover {
+      color: #f1f1f1;
+    }
+
+    /* Position and style the close button (top right corner) */
+    .sidenav .closebtn {
+      position: absolute;
+      top: 0;
+      right: 25px;
+      font-size: 36px;
+      margin-left: 50px;
+    }
+
+    /* Style page content - use this if you want to push the page content to the right when you open the side navigation */
+    #main {
+      transition: margin-left .5s;
+      padding: 20px;
+    }
+
+    .sideItem{
+      padding:10px;
+      margin:10px;
+      border:1px solid #ccc;
+
+    }
+
+    /* On smaller screens, where height is less than 450px, change the style of the sidenav (less padding and a smaller font size) */
+    @media screen and (max-height: 450px) {
+      .sidenav {
+        padding-top: 15px;
+      }
+
+      .sidenav a {
+        font-size: 18px;
+      }
+    }
+  </style>
+</head>
+
+<body>
+
+  <div id="mySidenav" class="sidenav">
+    <a href="javascript:void(0)" class="closebtn" onclick="closeNav()">&times;</a>
+    <div id="sideBarContent"></div>
+  </div>
+
+  <nav id="menu"></nav>
+  <div id="map"></div>
+  <div id="filters">
+    <div id="clearFilters" class="filter-button">Clear filters</div>
+  </div>
+
+  <div class="autocomplete" style="width:300px;">
+    <input id="myInput" type="text" name="myCountry" placeholder="Søk...">
+  </div>
+  <!-- <div id="logo">
+        <img src="img/Conveyor_white_300px.png" alt="">
+    </div> -->
+</body>
+<script type="text/javascript">
+
+  const sideBarContent = document.getElementById("sideBarContent")
+  const filtersDiv = document.getElementById("filters")
+  const filters = {};
+  const buttons = {};
+  let searchData = [];
+
+  const SPIDERFY_FROM_ZOOM = 16;
+  const mainData = [];
+  let filteredData = [];
+
+  const colors = ["#8dd3c7", "#ffffb3", "#bebada", "#fb8072", "#80b1d3", "#fdb462", "#b3de69", "#fccde5", "#d9d9d9", "#bc80bd", "#ccebc5", "#ffed6f"];
+  mapboxgl.accessToken = 'pk.eyJ1Ijoic29jcmF0YSIsImEiOiJjaXJxc2wzam0waGU5ZmZtODhqd2ttamdxIn0.1ZQEByXoDD7fGIa9lUHIqg';
+
+  var map = new mapboxgl.Map({
+    container: 'map',
+    style: 'mapbox://styles/mapbox/light-v9',
+    center: { lng: 10.773072456449313, lat: 59.89911350846617 },
+    zoom: 10
+  });
+
+  var spiderifier = new MapboxglSpiderifier(map, {
+    animate: true,
+    animationSpeed: 200,
+    customPin: false,
+    initializeLeg: initializeSpiderLeg,
+    circleFootSeparation: 70, // related to circumference of circle
+  });
+
+  function initializeSpiderLeg(spiderLeg) {
+
+    var pinElem = spiderLeg.elements.pin;
+    var feature = spiderLeg.feature;
+    var popup;
+
+    console.log('spiderLeg', spiderLeg);
+
+    if (feature['Ledig ja/nei'] === 'Utleid') {
+      pinElem.className = pinElem.className + ' red';
+    }
+    if (feature['Ledig ja/nei'] === 'Ledig') {
+      pinElem.className = pinElem.className + ' green';
+    }
+
+    const div = document.createElement("div")
+    div.innerHTML = feature['Gård+L.nr'];
+    div.style.cssText = 'position: relative;top: -20px;text-align: center;left: -20px;'
+    pinElem.appendChild(div)
+
+    pinElem.addEventListener('click', function (e) {
+      e.stopPropagation();
+      const offset = MapboxglSpiderifier.popupOffsetForSpiderLeg(spiderLeg);
+      Object.entries(offset).forEach(i => {//MOVE POPUP HIGHER
+        i[1][1] -= 35
+      })
+      const data = spiderLeg.feature
+      popup = new mapboxgl.Popup({
+        closeButton: true,
+        closeOnClick: true,
+        offset: offset
+      })
+        .setHTML('')
+        .addTo(map)
+
+      setTimeout(() => {
+        spiderLeg.mapboxMarker.setPopup(popup)
+        popup.setHTML(popupText(data)).addTo(map)
+      }, 10);
+
+    });
+  }
+
+  map.on('load', function () {
+
+
+    var layers = map.getStyle().layers;
+    var labelLayerId;
+    for (var i = 0; i < layers.length; i++) {
+      if (layers[i].type === 'symbol' && layers[i].layout['text-field']) {
+        labelLayerId = layers[i].id;
+        break;
+      }
+    }
+
+    // The 'building' layer in the Mapbox Streets
+    // vector tileset contains building height data
+    // from OpenStreetMap.
+    map.addLayer(
+      {
+        'id': 'add-3d-buildings',
+        'source': 'composite',
+        'source-layer': 'building',
+        'filter': ['==', 'extrude', 'true'],
+        'type': 'fill-extrusion',
+        'minzoom': 15,
+        'paint': {
+          'fill-extrusion-color': '#aaa',
+
+          // Use an 'interpolate' expression to
+          // add a smooth transition effect to
+          // the buildings as the user zooms in.
+          'fill-extrusion-height': [
+            'interpolate',
+            ['linear'],
+            ['zoom'],
+            15,
+            0,
+            15.05,
+            ['get', 'height']
+          ],
+          'fill-extrusion-base': [
+            'interpolate',
+            ['linear'],
+            ['zoom'],
+            15,
+            0,
+            15.05,
+            ['get', 'min_height']
+          ],
+          'fill-extrusion-opacity': 0.6
+        }
+      },
+
+      labelLayerId
+    );
+
+
+
+    map.addSource('pins', {
+      type: 'geojson',
+      cluster: false,
+      clusterRadius: 50,
+      clusterMaxZoom: 25,
+      data: {
+        type: 'FeatureCollection',
+        features: []
+      }
+    });
+
+    // map.addLayer({
+    //     'id': 'pins',
+    //     'type': 'symbol',
+    //     'source': 'pins',
+    //     'layout': {
+    //         "icon-image": "marker-15"
+    //     },
+    // });
+
+
+    map.addLayer({
+      'id': 'cluster-pins',
+      'type': 'circle',
+      'source': 'pins',
+      'paint': {
+        'circle-color': ['get', 'color'],
+        'circle-radius': {
+          type: 'interval',
+          property: "count",
+          stops: [
+            [1, 8],
+            [2, 14],
+          ]
+        },
+      }
+    });
+
+    map.addLayer({
+      'id': 'app-name',
+      'type': 'symbol',
+      'source': 'pins',
+      'layout': {
+        'text-field': ['get', 'appName'],
+        'text-font': [
+          'DIN Offc Pro Medium',
+          'Arial Unicode MS Bold'
+        ],
+        'text-size': 12,
+        'text-offset': [0, -2],
+        'text-allow-overlap': false
+      }
+    });
+
+    map.addLayer({
+      'id': 'cluster-pins-count',
+      'type': 'symbol',
+      'source': 'pins',
+      'layout': {
+        'text-field': ['get', 'count'],
+        'text-font': [
+          'DIN Offc Pro Medium',
+          'Arial Unicode MS Bold'
+        ],
+        'text-size': 12,
+        //'text-allow-overlap': true
+      }
+    });
+    // map.on('mouseenter', 'pins', mouseEnter);
+    // map.on('mouseleave', 'pins', mouseLeave);
+
+
+    map.on('click', () => {
+      spiderifier.unspiderfy();
+    });
+    map.on('click', 'cluster-pins', mouseClick);
+    map.on('mouseenter', 'cluster-pins', mouseEnter);
+    map.on('mouseleave', 'cluster-pins', mouseLeave);
+
+
+    map.on('zoomstart', function () {
+      spiderifier.unspiderfy();
+    });
+
+    d3.csv("https://docs.google.com/spreadsheets/d/e/2PACX-1vTcxo-SA79uvhGh0dY0Lojbya2mn0cEoK6QQzXPf77hw5_vBHS7OR7D26r1cRFBDg/pub?output=csv")
+      .then(data => {
+
+        //fill empty coordinates from same addresses !IMP
+        data.forEach(i => {
+          if (i.Latitude === "") {
+            const p = data.filter(f => f.Adresse === i.Adresse && f.Latitude !== "")
+            if (p.length > 0) {
+              i.Latitude = p[0].Latitude
+              i.Longitude = p[0].Longitude
+            }
+          }
+        })
+
+        mainData.push(...data);
+        showPins(data);
+      })
+
+  });
+
+  document.getElementById("clearFilters").addEventListener("click", () => {
+    console.log('filters', filters);
+    Object.keys(filters).forEach(key => {
+      delete filters[key];
+    })
+    updatePins()
+
+
+    var list = document.getElementsByClassName("filter-button")
+    for (let item of list) {
+      item.classList.remove("selected")
+    }
+  })
+
+  function mouseEnter() {
+    map.getCanvas().style.cursor = 'pointer';
+  }
+  function mouseLeave() {
+    map.getCanvas().style.cursor = '';
+  }
+
+  function showPins(data) {
+
+    //filters and buttons
+    buttons.ansvar = [...new Set(data.map(i => i['Ansvar']))].filter(i => i !== "")
+    buttons.rooms = [...new Set(data.map(i => i['Rom']))].filter(i => i !== "")
+    buttons.rent = [...new Set(data.map(i => i['Ledig ja/nei']))].filter(i => i !== "")
+    buildButtons("rooms")
+    buildButtons("ansvar")
+    buildButtons("rent")
+
+    updatePins()
+
+  }
+
+  function buildButtons(name) {
+
+    filtersDiv;
+    const div = document.createElement("div")
+    div.style.display = "flex"
+    div.style.flexDirection = "row"
+
+    buttons[name].sort().forEach(i => {
+      const button = document.createElement("div")
+      button.className = "filter-button";
+      button.innerHTML = (name === 'rooms') ? `${i}-roms` : i;
+      button.setAttribute(name, i);
+
+      button.addEventListener("click", () => {
+        if (button.classList.contains("selected")) {
+          button.classList.remove("selected")
+        } else {
+          button.classList.add("selected")
+        }
+
+        if (!filters.hasOwnProperty(name)) { filters[name] = [] };
+
+        const index = filters[name].indexOf(i);
+        if (index > -1) {
+          filters[name].splice(index, 1);
+        } else {
+          filters[name].push(i)
+        }
+        updatePins()
+      })
+      div.appendChild(button)
+    })
+    filtersDiv.appendChild(div)
+
+  }
+
+  function updatePins() {
+
+    const filtered = mainData
+      .filter(i => {
+        if (filters.rooms && filters.rooms.length > 0) {
+          return filters.rooms.includes(i['Rom']);
+        } else {
+          return i
+        }
+      })
+      .filter(i => {
+        if (filters.ansvar && filters.ansvar.length > 0) {
+          return filters.ansvar.includes(i['Ansvar']);
+        } else {
+          return i
+        }
+      })
+      .filter(i => {
+        if (filters.rent && filters.rent.length > 0) {
+          return filters.rent.includes(i['Ledig ja/nei']);
+        } else {
+          return i
+        }
+      })
+
+
+    //group by addresses
+    const addresses = [...new Set(filtered.map(i => i.Adresse))].map(i => {
+      return { name: i, appName: "", list: [], coord: { lat: '', lng: '' }, }
+    })
+    filtered.map(i => {
+      const a = addresses.find(n => n.name === i.Adresse);
+      if (a) {
+        //a.appName = i['Gård+L.nr'];
+        a.appName = i['Gård'];
+        a.list.push(i)
+        if (i.Latitude !== "") {
+          a.coord = { lng: +i.Longitude, lat: +i.Latitude }
+        }
+      }
+    })
+
+
+    filteredData.length = 0;
+    filteredData.push(...addresses);
+
+
+    const collection = addresses.map(d => {
+
+      let color = 'red';
+      if (d.list.length === 1) {
+        if (d.list[0]['Ledig ja/nei'] === 'Utleid') {
+          color = 'red'
+        }
+        if (d.list[0]['Ledig ja/nei'] === 'Ledig') {
+          color = 'green'
+        }
+      } else {
+        color = 'orange'
+      }
+
+      return {
+        "type": "Feature",
+        "geometry": { "type": "Point", "coordinates": [d.coord.lng, d.coord.lat] },
+        "properties": {
+          count: d.list.length,
+          addr: d.name,
+          appName: d.appName,
+          rooms: d.Rom,
+          color: color,
+          ...d.list[0]
+        },
+      }
+    })
+    // console.log('collection', collection);
+    map.getSource('pins').setData({ type: "FeatureCollection", features: collection })
+
+
+    searchData = mainData.map((i, key) => {
+      //return `${i['Adresse']}`;
+      return {
+        text: `${i['Adresse']} <br>${i['ID_PRIS']}<br>${i['ID_SAKSBEHANDLER']}<br>${i['Gård+L.nr']}`,
+        coord: [i.Longitude, i.Latitude]
+      }
+    })
+    //console.log('searchData', searchData);
+    autocomplete(document.getElementById("myInput"), searchData);
+  }
+
+  function mouseClick(e) {
+
+    const pinData = e.features[0];
+    const f = filteredData.find(d => d.name === pinData.properties.addr);
+
+    if (f) {
+
+      if (f.list.length > 1) {
+
+        const features = f.list
+        spiderifier.spiderfy([f.coord.lng, f.coord.lat], features);
+
+        openNav()
+
+        console.log(features);
+        const side = features.map(i=>{
+
+          return `<div class="sideItem">
+
+              <div>P_rom: ${i['P_rom']}</div>
+              <div>L.Nr:${i['L.Nr']}</div>
+              <div>${i['Adresse']}</div>
+            </div>`
+        }).join("")
+        sideBarContent.innerHTML = side
+
+      } else {
+
+        //it is a simple marker with 1 room - open popup
+        const data = f.list[0]
+        var coordinates = e.features[0].geometry.coordinates.slice();
+        popup = new mapboxgl.Popup({
+          closeButton: true,
+          closeOnClick: true,
+        })
+          .setLngLat(coordinates)
+          .setHTML(popupText(data))
+          .addTo(map)
+
+      }
+    }
+  }
+
+  function popupText(data) {
+
+    let visning = `Ingen 360-visning`;
+    if (data['360-visning']) {
+      visning = `<a href="${data['360-visning']}"><b>360-visning</b></a>`;
+    }
+
+    const text = `
+                    <h3>${data['Gård+L.nr']}</h3>
+                    <div>Adresse: ${data.Adresse}</div>
+                    <div>L.Nr: ${data['L.Nr']}</div>
+                    <div>Tilgjengelighet: ${data['Ledig ja/nei']}</div>
+                    <div>ID_PRIS: ${data.ID_PRIS}</div>
+                    <div>ID_Saksbehandler: ${data['ID_SAKSBEHANDLER']}</div>
+                    <div>ID_Eiendom: ${data.ID_EIENDOM}</div>
+                    <div>K.nr: ${data['KNR']}</div>
+                    <div>Ansvar: ${data['Ansvar']}</div>
+                    <hr>
+                    ${visning}
+                    `;
+    return text
+    // <div>Rom: ${data['Rom']}</div>
+  }
+
+  function mouseMove(e) {
+    var features = map.queryRenderedFeatures(e.point, {
+      layers: ['cluster-pins']
+    });
+    map.getCanvas().style.cursor = (features.length) ? 'pointer' : '';
+  }
+
+
+  function autocomplete(inp, data) {
+    /*the autocomplete function takes two arguments,
+                the text field element and an array of possible autocompleted values:*/
+    var currentFocus;
+    /*execute a function when someone writes in the text field:*/
+    inp.addEventListener("input", function (e) {
+      var a, b, i, val = this.value;
+      /*close any already open lists of autocompleted values*/
+      closeAllLists();
+      if (!val) { return false; }
+      currentFocus = -1;
+      /*create a DIV element that will contain the items (values):*/
+      a = document.createElement("DIV");
+      a.setAttribute("id", this.id + "autocomplete-list");
+      a.setAttribute("class", "autocomplete-items");
+      /*append the DIV element as a child of the autocomplete container:*/
+      this.parentNode.appendChild(a);
+
+
+      const arr = data.map(i => i.text)
+      let counter = 0;
+
+      /*for each item in the array...*/
+      for (i = 0; i < arr.length; i++) {
+
+        /*check if the item starts with the same letters as the text field value:*/
+        //if (arr[i].substr(0, val.length).toUpperCase() == val.toUpperCase()) {
+
+        const search = arr[i].toUpperCase().search(val.toUpperCase())
+        if (search > -1) {
+          /*create a DIV element for each matching element:*/
+          b = document.createElement("DIV");
+          /*make the matching letters bold:*/
+
+          const text = arr[i].substr(0, search) + '<b>' + arr[i].substr(search, val.length) + '</b>' + arr[i].substr((search + val.length), arr[i].length)
+
+          //b.innerHTML = "<strong>" + arr[i].substr(0, val.length) + "</strong>";
+          //b.innerHTML += arr[i].substr(val.length);
+          b.innerHTML = text
+          /*insert a input field that will hold the current array item's value:*/
+          b.innerHTML += "<input type='hidden' value='" + arr[i] + "'>";
+          /*execute a function when someone clicks on the item value (DIV element):*/
+          b.addEventListener("click", function (e) {
+            /*insert the value for the autocomplete text field:*/
+            inp.value = this.getElementsByTagName("input")[0].value.replaceAll('<br>', ' ');
+            /*close the list of autocompleted values,
+            (or any other open lists of autocompleted values:*/
+            closeAllLists();
+
+            const point = data.find(i => i.text === this.getElementsByTagName("input")[0].value);
+            if (point) {
+              map.flyTo({
+                center: point.coord,
+                zoom: 19,
+                pitch: 50
+              })
+
+              // map.setFilter('labels', [
+              //     'match',
+              //     ['get', 'bygningsnavn'],
+              //     inp.value,
+              //     true,
+              //     false
+              // ])
+              // map.setFilter('selected', [
+              //     'match',
+              //     ['get', 'bygningsnavn'],
+              //     inp.value,
+              //     true,
+              //     false
+              // ])
+
+              // map.once("idle", () => {
+              //     console.log('done');
+              //     var mapBounds = map.getBounds()
+              //     const query = map.queryRenderedFeatures([map.project(mapBounds.getSouthWest()), map.project(mapBounds.getNorthEast())], { layers: ['pins'] });
+
+              //     const names = [...new Set(query.map(i => i.properties.bygningsnavn))]
+
+              //     console.log('names', names);
+              //     map.setFilter('labels', [
+              //         'match',
+              //         ['get', 'bygningsnavn'],
+              //         names,
+              //         true,
+              //         false
+              //     ])
+              // })
+            }
+
+          });
+          if (counter > 20) return; // display forst 20 results
+          a.appendChild(b);
+          counter++;
+        }
+      }
+    });
+    /*execute a function presses a key on the keyboard:*/
+    inp.addEventListener("keydown", function (e) {
+      var x = document.getElementById(this.id + "autocomplete-list");
+      if (x) x = x.getElementsByTagName("div");
+      if (e.keyCode == 40) {
+        /*If the arrow DOWN key is pressed,
+        increase the currentFocus variable:*/
+        currentFocus++;
+        /*and and make the current item more visible:*/
+        addActive(x);
+      } else if (e.keyCode == 38) { //up
+        /*If the arrow UP key is pressed,
+        decrease the currentFocus variable:*/
+        currentFocus--;
+        /*and and make the current item more visible:*/
+        addActive(x);
+      } else if (e.keyCode == 13) {
+        /*If the ENTER key is pressed, prevent the form from being submitted,*/
+        e.preventDefault();
+        if (currentFocus > -1) {
+          /*and simulate a click on the "active" item:*/
+          if (x) x[currentFocus].click();
+        }
+      }
+    });
+    function addActive(x) {
+      /*a function to classify an item as "active":*/
+      if (!x) return false;
+      /*start by removing the "active" class on all items:*/
+      removeActive(x);
+      if (currentFocus >= x.length) currentFocus = 0;
+      if (currentFocus < 0) currentFocus = (x.length - 1);
+      /*add class "autocomplete-active":*/
+      x[currentFocus].classList.add("autocomplete-active");
+
+      console.log('x', x);
+    }
+    function removeActive(x) {
+      /*a function to remove the "active" class from all autocomplete items:*/
+      for (var i = 0; i < x.length; i++) {
+        x[i].classList.remove("autocomplete-active");
+      }
+    }
+    function closeAllLists(elmnt) {
+      /*close all autocomplete lists in the document,
+                  except the one passed as an argument:*/
+      var x = document.getElementsByClassName("autocomplete-items");
+      for (var i = 0; i < x.length; i++) {
+        if (elmnt != x[i] && elmnt != inp) {
+          x[i].parentNode.removeChild(x[i]);
+        }
+      }
+    }
+    /*execute a function when someone clicks in the document:*/
+    document.addEventListener("click", function (e) {
+      closeAllLists(e.target);
+    });
+  }
+
+
+
+  function openNav() {
+    document.getElementById("mySidenav").style.width = "250px";
+  }
+
+  function closeNav() {
+    document.getElementById("mySidenav").style.width = "0";
+  }
+</script>
+
+</html>
