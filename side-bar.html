@@ -823,9 +823,7 @@
         console.log(features);
         console.log('pinData', pinData);
         const side = features.map(i => { //side bar content 
-          return `<div class="sideItem" id="${i['Gård+L.nr']}">
-            <div class="sideBarItem">${i['Gård+L.nr']}</div>
-          </div>`
+          return text(i)
         }).join("")
         sideBarContent.innerHTML = side
 
@@ -844,14 +842,18 @@
           .addTo(map)
 
         console.log(data);
-        sideBarContent.innerHTML = `<div class="sideItem" id="${data['Gård+L.nr']}">
-            <div class="sideBarItem">${data['Gård+L.nr']}</div>
-          </div>`
+        sideBarContent.innerHTML = text(data)
       }
 
+    }
 
+    function text(data) {
 
-
+      const addr = data['Adresse'].replace(",", ",<br>")
+      return `<div class="sideItem" id="${data['Gård+L.nr']}">
+            <div class="sideBarItem">${addr}</div>
+            <div class="sideBarItem">${data['Gård+L.nr']}</div>
+          </div>`
     }
   }
 
@@ -859,6 +861,15 @@
     console.log(e.target.closest("div.eItem"));
 
     if (e.target.closest("div.sideItem")) {
+
+
+      //close all popups 
+      const s = document.querySelectorAll('.mapboxgl-popup');
+      Array.from(s).map(i => {
+        i.remove()
+      })
+
+
       const id = e.target.closest("div.sideItem").id
       console.log(id);
       document.querySelector("." + id).click()
@@ -869,7 +880,7 @@
 
     let visning = `Ingen 360-visning`;
     if (data['360-visning']) {
-      visning = `<a href="${data['360-visning']}"><b>360-visning</b></a>`;
+      visning = `<a target="_blank" href="${data['360-visning']}"><b>360-visning</b></a>`;
     }
 
     const text = `
