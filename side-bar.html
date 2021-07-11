@@ -385,6 +385,10 @@
         font-size: 18px;
       }
     }
+
+    h3{
+      padding:10px;
+    }
   </style>
 </head>
 
@@ -825,7 +829,9 @@
         const side = features.map(i => { //side bar content 
           return text(i)
         }).join("")
-        sideBarContent.innerHTML = side
+
+        const addr = features[0]['Adresse'].replace(",", ",<br>")
+        sideBarContent.innerHTML = side + `<h3>${addr}</h3>`
 
 
       } else {
@@ -842,7 +848,8 @@
           .addTo(map)
 
         console.log(data);
-        sideBarContent.innerHTML = text(data)
+        const addr = data['Adresse'].replace(",", ",<br>")
+        sideBarContent.innerHTML = text(data) + `<h3>${addr}</h3>`
       }
 
     }
@@ -851,7 +858,6 @@
 
       const addr = data['Adresse'].replace(",", ",<br>")
       return `<div class="sideItem" id="${data['Gård+L.nr']}">
-            <div class="sideBarItem">${addr}</div>
             <div class="sideBarItem">${data['Gård+L.nr']}</div>
           </div>`
     }
@@ -861,7 +867,6 @@
     console.log(e.target.closest("div.eItem"));
 
     if (e.target.closest("div.sideItem")) {
-
 
       //close all popups 
       const s = document.querySelectorAll('.mapboxgl-popup');
