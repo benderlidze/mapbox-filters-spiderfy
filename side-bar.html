@@ -859,7 +859,7 @@
         }).join("")
 
         const addr = features[0]['Adresse'].replace(",", ",<br>")
-        sideBarContent.innerHTML = side + `<h3>${addr}</h3>`
+        sideBarContent.innerHTML =  `<h3>${addr}</h3>` + side
 
 
       } else {
@@ -877,7 +877,7 @@
 
         console.log(data);
         const addr = data['Adresse'].replace(",", ",<br>")
-        sideBarContent.innerHTML = text(data) + `<h3>${addr}</h3>`
+        sideBarContent.innerHTML =  `<h3>${addr}</h3>` + text(data) 
       }
 
     }
