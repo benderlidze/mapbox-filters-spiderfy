@@ -386,8 +386,8 @@
       }
     }
 
-    h3{
-      padding:10px;
+    h3 {
+      padding: 10px;
     }
   </style>
 </head>
@@ -491,6 +491,7 @@
   map.on('load', function () {
 
 
+
     var layers = map.getStyle().layers;
     var labelLayerId;
     for (var i = 0; i < layers.length; i++) {
@@ -581,6 +582,33 @@
         },
       }
     });
+
+
+
+    // map.loadImage('https://raw.githubusercontent.com/pointhi/leaflet-color-markers/master/img/marker-icon-red.png', function (error, image) {
+    //   if (error) throw error;
+    //   map.addImage('red', image);
+    // })
+    // map.loadImage('https://raw.githubusercontent.com/pointhi/leaflet-color-markers/master/img/marker-icon-green.png', function (error, image) {
+    //   if (error) throw error;
+    //   map.addImage('green', image);
+
+    //   // Add a layer to use the image to represent the data.
+    //   map.addLayer({
+    //     'id': 'points',
+    //     'type': 'symbol',
+    //     'source': 'pins', // reference the data source
+    //     'layout': {
+    //       'icon-image': 'green', // reference the image
+    //       'icon-size': 1
+    //     }
+    //   });
+
+    // })
+
+
+
+
 
     map.addLayer({
       'id': 'app-name',
@@ -774,7 +802,7 @@
           color = 'red'
         }
         if (d.list[0]['Ledig ja/nei'] === 'Ledig') {
-          color = 'green'
+          color = '#25aa22'
         }
       } else {
         color = 'orange'
