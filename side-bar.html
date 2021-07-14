@@ -137,7 +137,7 @@
       position: absolute;
       z-index: 1000;
       bottom: 0px;
-      right: 0px;
+      left: 0px;
       padding: 20px;
     }
 
@@ -408,9 +408,9 @@
   <div class="autocomplete" style="width:300px;">
     <input id="myInput" type="text" name="myCountry" placeholder="Søk...">
   </div>
-  <!-- <div id="logo">
-        <img src="img/Conveyor_white_300px.png" alt="">
-    </div> -->
+  <div id="logo">
+    <img src="Logo-demo.jpg" alt="">
+  </div>
 </body>
 <script type="text/javascript">
 
@@ -859,7 +859,7 @@
         }).join("")
 
         const addr = features[0]['Adresse'].replace(",", ",<br>")
-        sideBarContent.innerHTML =  `<h3>${addr}</h3>` + side
+        sideBarContent.innerHTML = `<h3>${addr}</h3>` + side
 
 
       } else {
@@ -877,7 +877,7 @@
 
         console.log(data);
         const addr = data['Adresse'].replace(",", ",<br>")
-        sideBarContent.innerHTML =  `<h3>${addr}</h3>` + text(data) 
+        sideBarContent.innerHTML = `<h3>${addr}</h3>` + text(data)
       }
 
     }
