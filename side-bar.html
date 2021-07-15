@@ -129,7 +129,6 @@
 
 
     .selected {
-
       filter: grayscale(0%)
     }
 
@@ -715,11 +714,20 @@
 
     filtersDiv;
     const div = document.createElement("div")
-    div.style.display = "flex"
-    div.style.flexDirection = "row"
+
+
+    if (name === 'ansvar') {
+      div.style.display = "grid"
+      div.style.gridTemplateColumns = "auto auto auto auto auto"
+    } else {
+      div.style.display = "flex"
+      div.style.flexDirection = "row"
+    }
 
     buttons[name].sort().forEach(i => {
       const button = document.createElement("div")
+
+
       button.className = "filter-button";
       button.innerHTML = (name === 'rooms') ? `${i}-roms` : i;
       button.setAttribute(name, i);
