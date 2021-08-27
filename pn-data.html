@@ -163,14 +163,12 @@
         /*the container must be positioned relative:*/
         .autocomplete {
             position: absolute;
-            display: inline-block;
             top: 20px;
             left: 20px;
         }
 
         input {
             border: 1px solid rgb(133, 133, 133);
-
             background-color: #f1f1f1;
             padding: 10px;
             font-size: 16px;
@@ -178,7 +176,7 @@
 
         input[type=text] {
             background-color: #f1f1f1;
-            width: 100%;
+            width: 200px;
         }
 
         input[type=submit] {
@@ -239,6 +237,35 @@
         h3 {
             padding: 10px;
         }
+
+
+
+        .arrow {
+            border: solid black;
+            border-width: 0 3px 3px 0;
+            display: inline-block;
+            padding: 3px;
+        }
+
+        .right {
+            transform: rotate(-45deg);
+            -webkit-transform: rotate(-45deg);
+        }
+
+        .left {
+            transform: rotate(135deg);
+            -webkit-transform: rotate(135deg);
+        }
+
+        .up {
+            transform: rotate(-135deg);
+            -webkit-transform: rotate(-135deg);
+        }
+
+        .down {
+            transform: rotate(45deg);
+            -webkit-transform: rotate(45deg);
+        }
     </style>
 </head>
 
@@ -247,7 +274,9 @@
     <div id="map"></div>
 
     <div class="autocomplete" style="width:300px;">
-        <input id="myInput" type="text" name="myCountry" placeholder="Søk...">
+        <input id="myInput" type="text" style="display:inline" name="myCountry" placeholder="Søk..."><button
+            id="showall" style="display:inline;padding:12px;border:1px solid gray; cursor:pointer"><i
+                class="arrow down"></i></button>
     </div>
     <div id="logo">
         <img src="Logo-demo.jpg" alt="">
@@ -255,8 +284,11 @@
 </body>
 <script type="text/javascript">
 
+    const showall = document.getElementById("showall")
     const sideBarContent = document.getElementById("sideBarContent")
     const filtersDiv = document.getElementById("filters")
+    const input = document.getElementById("myInput")
+
     const filters = {};
     const buttons = {};
     let searchData = [];
@@ -272,7 +304,7 @@
     var map = new mapboxgl.Map({
         container: 'map',
         style: 'mapbox://styles/mapbox/light-v9',
-        center: {lng: 16.172415754321435, lat: 64.65230149115905},
+        center: { lng: 16.172415754321435, lat: 64.65230149115905 },
         zoom: 4.7
     });
 
@@ -331,8 +363,6 @@
 
     map.on('load', function () {
 
-
-
         var layers = map.getStyle().layers;
         var labelLayerId;
         for (var i = 0; i < layers.length; i++) {
@@ -384,8 +414,6 @@
             labelLayerId
         );
 
-
-
         map.addSource('pins', {
             type: 'geojson',
             cluster: false,
@@ -403,18 +431,13 @@
             'source': 'pins',
             'paint': {
                 'circle-color': "red",
-                'circle-radius':10,
+                'circle-radius': 10,
             }
         });
-
-
-
-
 
         map.on('mouseenter', 'cluster-pins', mouseEnter);
         map.on('mouseleave', 'cluster-pins', mouseLeave);
         map.on('click', 'cluster-pins', mouseClick);
-
 
         d3.csv("https://docs.google.com/spreadsheets/d/e/2PACX-1vSTc68nYOPZyxB36sBTO_9r9M2dk5H39NrSoC8wYwJKEToI9MKZ5LlaXiLSkEk4Eq31MbZcAJ8UAp2t/pub?output=csv")
             .then(data => {
@@ -425,6 +448,15 @@
 
     });
 
+    showall.addEventListener("click", () => {
+        console.log('111', 111);
+        setTimeout(() => {
+            input.value = " ";
+            input.dispatchEvent(new Event('input', { bubbles: true }));
+            input.focus()
+            input.value = "";
+        }, 500)
+    })
 
     function mouseEnter() {
         map.getCanvas().style.cursor = 'pointer';
@@ -438,7 +470,7 @@
 
         var bounds = new mapboxgl.LngLatBounds();
 
-        const collection = data.map(d => {
+        const collection = data.filter(i => i.longitude !== "" && i.latitude !== "").map(d => {
 
             bounds.extend([d.longitude, d.latitude]);
             return {
@@ -452,17 +484,14 @@
         console.log('collection', collection);
         map.getSource('pins').setData({ type: "FeatureCollection", features: collection })
 
-//        map.fitBounds(bounds, { padding: 100 });
-
-
         searchData = data.map((i, key) => {
             return {
                 text: `${i['title']}  `,
                 coord: [i.longitude, i.latitude]
             }
         })
-        //console.log('searchData', searchData);
-        autocomplete(document.getElementById("myInput"), searchData);
+
+        autocomplete(input, searchData);
 
     }
 
@@ -503,11 +532,13 @@
         var currentFocus;
         /*execute a function when someone writes in the text field:*/
         inp.addEventListener("input", function (e) {
+            console.log('e', e);
             var a, b, i, val = this.value;
             /*close any already open lists of autocompleted values*/
             closeAllLists();
             if (!val) { return false; }
             currentFocus = -1;
+
             /*create a DIV element that will contain the items (values):*/
             a = document.createElement("DIV");
             a.setAttribute("id", this.id + "autocomplete-list");
