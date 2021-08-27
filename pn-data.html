@@ -249,9 +249,9 @@
     <div class="autocomplete" style="width:300px;">
         <input id="myInput" type="text" name="myCountry" placeholder="Søk...">
     </div>
-    <!-- <div id="logo">
+    <div id="logo">
         <img src="Logo-demo.jpg" alt="">
-    </div> -->
+    </div>
 </body>
 <script type="text/javascript">
 
@@ -272,8 +272,8 @@
     var map = new mapboxgl.Map({
         container: 'map',
         style: 'mapbox://styles/mapbox/light-v9',
-        center: { lng: 10.773072456449313, lat: 59.89911350846617 },
-        zoom: 10
+        center: {lng: 16.172415754321435, lat: 64.65230149115905},
+        zoom: 4.7
     });
 
     var spiderifier = new MapboxglSpiderifier(map, {
@@ -402,15 +402,8 @@
             'type': 'circle',
             'source': 'pins',
             'paint': {
-                'circle-color': ['get', 'color'],
-                'circle-radius': {
-                    type: 'interval',
-                    property: "count",
-                    stops: [
-                        [1, 8],
-                        [2, 14],
-                    ]
-                },
+                'circle-color': "red",
+                'circle-radius':10,
             }
         });
 
@@ -459,7 +452,7 @@
         console.log('collection', collection);
         map.getSource('pins').setData({ type: "FeatureCollection", features: collection })
 
-        map.fitBounds(bounds, { padding: 100 });
+//        map.fitBounds(bounds, { padding: 100 });
 
 
         searchData = data.map((i, key) => {
