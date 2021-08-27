@@ -1,0 +1,634 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+    <meta http-equiv="content-type" content="text/html; charset=UTF-8">
+    <meta name="robots" content="noindex, nofollow">
+    <meta name="googlebot" content="noindex, nofollow">
+    <script src="https://api.mapbox.com/mapbox-gl-js/v2.3.0/mapbox-gl.js"></script>
+    <link href="https://api.mapbox.com/mapbox-gl-js/v2.3.0/mapbox-gl.css" rel="stylesheet" />
+    <script src="https://d3js.org/d3.v5.min.js"></script>
+
+    <script type="text/javascript" src="https://bewithjonam.github.io/mapboxgl-spiderifier/index.js"></script>
+    <link rel="stylesheet" type="text/css" href="https://bewithjonam.github.io/mapboxgl-spiderifier/index.css">
+
+    <script type="text/javascript" src="https://cdnjs.cloudflare.com/ajax/libs/lodash.js/4.17.2/lodash.js"></script>
+    <title>Mapbox gl spiderifier</title>
+
+    <style type="text/css">
+        #map {
+            position: absolute;
+            top: 0;
+            bottom: 0;
+            width: 100%;
+        }
+
+        body {
+            margin: 0;
+            padding: 0;
+            font-family: Helvetica Neue, Arial, Helvetica, sans-serif;
+        }
+
+        h3 {
+            padding: 0;
+            margin: 0;
+            color: #2f2f2f;
+            display: block;
+            font-weight: bold;
+            font: 20px Helvetica Neue, Arial, Helvetica, sans-serif;
+        }
+
+        .map-overlay {
+            position: absolute;
+            top: 140px;
+            left: 140px;
+            background: rgba(255, 255, 255, 0.8);
+            font-family: Arial, sans-serif;
+            overflow-y: overlay;
+            box-shadow: 0 0px 0px rgba(0, 0, 0, 0.5);
+            height: 550px;
+            width: 350px;
+            display: none;
+        }
+
+        #title {
+            position: absolute;
+            top: 5px;
+            left: 10px;
+            color: #2f2f2f;
+
+        }
+
+        #legend {
+            position: absolute;
+            top: 45px;
+            left: 10px;
+        }
+
+        #menuIcon {
+            position: absolute;
+            top: 45px;
+            left: 10px;
+        }
+
+        #map {
+            position: absolute;
+            top: 0;
+            bottom: 0;
+            width: 100%;
+        }
+
+        .grid-container {
+            display: grid;
+            grid-template-columns: auto auto;
+        }
+
+        .grid-item {
+            /* background-color: rgba(255, 255, 255, 0.8); */
+            border: 0px solid rgba(0, 0, 0, 0.8);
+            padding: 10px;
+            font-size: 30px;
+            text-align: center;
+        }
+
+        button:focus {
+            outline: none;
+        }
+
+        .imgbtn {
+            padding: 0px;
+            margin: 1px;
+            width: 100px;
+            height: 100px;
+            background-position: center;
+            /* Center the image */
+            background-repeat: no-repeat;
+            /* Do not repeat the image */
+            background-size: cover;
+            cursor: pointer;
+            filter: grayscale(100%);
+            background-color: transparent;
+        }
+
+
+        .selected {
+            filter: grayscale(0%)
+        }
+
+        #logo {
+            position: absolute;
+            z-index: 1000;
+            bottom: 0px;
+            left: 0px;
+            padding: 20px;
+        }
+
+        #logo img {
+            width: 300px;
+        }
+
+        /* .mapboxgl-popup-content {
+            max-height: 600px !important;
+            overflow-y: auto;
+            width: 400px;
+        } */
+
+        @media screen and (max-width: 992px) {
+            .imgbtn {
+                width: 73px;
+                height: 73px;
+            }
+
+            #legend {
+                position: absolute;
+                top: 45px;
+                left: 10px;
+            }
+
+            .mapboxgl-popup-content {
+                max-height: 600px !important;
+                overflow-y: auto;
+                width: 300px !important;
+            }
+
+            .mapboxgl-popup {
+                z-index: 1000
+            }
+
+            #logo img {
+                width: 200px;
+            }
+        }
+
+        /*the container must be positioned relative:*/
+        .autocomplete {
+            position: absolute;
+            display: inline-block;
+            top: 20px;
+            left: 20px;
+        }
+
+        input {
+            border: 1px solid rgb(133, 133, 133);
+
+            background-color: #f1f1f1;
+            padding: 10px;
+            font-size: 16px;
+        }
+
+        input[type=text] {
+            background-color: #f1f1f1;
+            width: 100%;
+        }
+
+        input[type=submit] {
+            background-color: DodgerBlue;
+            color: #fff;
+            cursor: pointer;
+        }
+
+        .autocomplete-items {
+            position: absolute;
+            border: 1px solid #d4d4d4;
+            border-bottom: none;
+            border-top: none;
+            z-index: 99;
+            /*position the autocomplete items to be the same width as the container:*/
+            top: 100%;
+            left: 0;
+            right: 0;
+        }
+
+        .autocomplete-items div {
+            padding: 10px;
+            cursor: pointer;
+            background-color: #fff;
+            border-bottom: 1px solid #d4d4d4;
+        }
+
+        /*when hovering an item:*/
+        .autocomplete-items div:hover {
+            background-color: #e9e9e9;
+        }
+
+        /*when navigating through the items using the arrow keys:*/
+        .autocomplete-active {
+            background-color: DodgerBlue !important;
+            color: #ffffff;
+        }
+
+
+        /* Style page content - use this if you want to push the page content to the right when you open the side navigation */
+        #main {
+            transition: margin-left .5s;
+            padding: 20px;
+        }
+
+        .sideItem {
+            padding: 10px;
+            margin: 10px;
+            border: 1px solid #ccc;
+            cursor: pointer;
+        }
+
+        .sideItem:hover {
+            background-color: #c9c9c9;
+        }
+
+
+        h3 {
+            padding: 10px;
+        }
+    </style>
+</head>
+
+<body>
+
+    <div id="map"></div>
+
+    <div class="autocomplete" style="width:300px;">
+        <input id="myInput" type="text" name="myCountry" placeholder="Søk...">
+    </div>
+    <!-- <div id="logo">
+        <img src="Logo-demo.jpg" alt="">
+    </div> -->
+</body>
+<script type="text/javascript">
+
+    const sideBarContent = document.getElementById("sideBarContent")
+    const filtersDiv = document.getElementById("filters")
+    const filters = {};
+    const buttons = {};
+    let searchData = [];
+
+    const SPIDERFY_FROM_ZOOM = 16;
+    const mainData = [];
+    let filteredData = [];
+    let spiderData;
+
+    const colors = ["#8dd3c7", "#ffffb3", "#bebada", "#fb8072", "#80b1d3", "#fdb462", "#b3de69", "#fccde5", "#d9d9d9", "#bc80bd", "#ccebc5", "#ffed6f"];
+    mapboxgl.accessToken = 'pk.eyJ1Ijoic29jcmF0YSIsImEiOiJjaXJxc2wzam0waGU5ZmZtODhqd2ttamdxIn0.1ZQEByXoDD7fGIa9lUHIqg';
+
+    var map = new mapboxgl.Map({
+        container: 'map',
+        style: 'mapbox://styles/mapbox/light-v9',
+        center: { lng: 10.773072456449313, lat: 59.89911350846617 },
+        zoom: 10
+    });
+
+    var spiderifier = new MapboxglSpiderifier(map, {
+        animate: true,
+        animationSpeed: 200,
+        customPin: false,
+        initializeLeg: initializeSpiderLeg,
+        circleFootSeparation: 70, // related to circumference of circle
+    });
+
+    function initializeSpiderLeg(spiderLeg) {
+
+        var pinElem = spiderLeg.elements.pin;
+        var feature = spiderLeg.feature;
+        var popup;
+
+        console.log('spiderLeg', spiderLeg);
+        console.log('feature', feature);
+        // spiderData = spiderLeg;
+
+        if (feature['Ledig ja/nei'] === 'Utleid') {
+            pinElem.className = pinElem.className + ' red ' + feature['Gård+L.nr'];
+        }
+        if (feature['Ledig ja/nei'] === 'Ledig') {
+            pinElem.className = pinElem.className + ' green ' + feature['Gård+L.nr'];
+        }
+
+        const div = document.createElement("div")
+        div.innerHTML = feature['L.Nr'];
+        div.style.cssText = 'position: relative;top: -20px;text-align: center;'
+        pinElem.appendChild(div)
+
+        pinElem.addEventListener('click', function (e) {
+            e.stopPropagation();
+            const offset = MapboxglSpiderifier.popupOffsetForSpiderLeg(spiderLeg);
+            Object.entries(offset).forEach(i => {//MOVE POPUP HIGHER
+                i[1][1] -= 35
+            })
+            const data = spiderLeg.feature
+            popup = new mapboxgl.Popup({
+                closeButton: true,
+                closeOnClick: true,
+                offset: offset
+            })
+                .setHTML('')
+                .addTo(map)
+
+            setTimeout(() => {
+                spiderLeg.mapboxMarker.setPopup(popup)
+                popup.setHTML(popupText(data)).addTo(map)
+            }, 10);
+
+        });
+    }
+
+    map.on('load', function () {
+
+
+
+        var layers = map.getStyle().layers;
+        var labelLayerId;
+        for (var i = 0; i < layers.length; i++) {
+            if (layers[i].type === 'symbol' && layers[i].layout['text-field']) {
+                labelLayerId = layers[i].id;
+                break;
+            }
+        }
+
+        // The 'building' layer in the Mapbox Streets
+        // vector tileset contains building height data
+        // from OpenStreetMap.
+        map.addLayer(
+            {
+                'id': 'add-3d-buildings',
+                'source': 'composite',
+                'source-layer': 'building',
+                'filter': ['==', 'extrude', 'true'],
+                'type': 'fill-extrusion',
+                'minzoom': 15,
+                'paint': {
+                    'fill-extrusion-color': '#aaa',
+
+                    // Use an 'interpolate' expression to
+                    // add a smooth transition effect to
+                    // the buildings as the user zooms in.
+                    'fill-extrusion-height': [
+                        'interpolate',
+                        ['linear'],
+                        ['zoom'],
+                        15,
+                        0,
+                        15.05,
+                        ['get', 'height']
+                    ],
+                    'fill-extrusion-base': [
+                        'interpolate',
+                        ['linear'],
+                        ['zoom'],
+                        15,
+                        0,
+                        15.05,
+                        ['get', 'min_height']
+                    ],
+                    'fill-extrusion-opacity': 0.6
+                }
+            },
+
+            labelLayerId
+        );
+
+
+
+        map.addSource('pins', {
+            type: 'geojson',
+            cluster: false,
+            clusterRadius: 50,
+            clusterMaxZoom: 25,
+            data: {
+                type: 'FeatureCollection',
+                features: []
+            }
+        });
+
+        map.addLayer({
+            'id': 'cluster-pins',
+            'type': 'circle',
+            'source': 'pins',
+            'paint': {
+                'circle-color': ['get', 'color'],
+                'circle-radius': {
+                    type: 'interval',
+                    property: "count",
+                    stops: [
+                        [1, 8],
+                        [2, 14],
+                    ]
+                },
+            }
+        });
+
+
+
+
+
+        map.on('mouseenter', 'cluster-pins', mouseEnter);
+        map.on('mouseleave', 'cluster-pins', mouseLeave);
+        map.on('click', 'cluster-pins', mouseClick);
+
+
+        d3.csv("https://docs.google.com/spreadsheets/d/e/2PACX-1vSTc68nYOPZyxB36sBTO_9r9M2dk5H39NrSoC8wYwJKEToI9MKZ5LlaXiLSkEk4Eq31MbZcAJ8UAp2t/pub?output=csv")
+            .then(data => {
+                console.log('data', data);
+                mainData.push(...data);
+                showPins(data);
+            })
+
+    });
+
+
+    function mouseEnter() {
+        map.getCanvas().style.cursor = 'pointer';
+    }
+    function mouseLeave() {
+        map.getCanvas().style.cursor = '';
+    }
+
+    function showPins(data) {
+
+
+        var bounds = new mapboxgl.LngLatBounds();
+
+        const collection = data.map(d => {
+
+            bounds.extend([d.longitude, d.latitude]);
+            return {
+                "type": "Feature",
+                "geometry": { "type": "Point", "coordinates": [d.longitude, d.latitude] },
+                "properties": {
+                    ...d
+                },
+            }
+        })
+        console.log('collection', collection);
+        map.getSource('pins').setData({ type: "FeatureCollection", features: collection })
+
+        map.fitBounds(bounds, { padding: 100 });
+
+
+        searchData = data.map((i, key) => {
+            return {
+                text: `${i['title']}  `,
+                coord: [i.longitude, i.latitude]
+            }
+        })
+        //console.log('searchData', searchData);
+        autocomplete(document.getElementById("myInput"), searchData);
+
+    }
+
+
+    function mouseClick(e) {
+
+        // Copy coordinates array.
+        const coordinates = e.features[0].geometry.coordinates.slice();
+        const title = e.features[0].properties.title;
+        const description = e.features[0].properties.description;
+
+        // Ensure that if the map is zoomed out such that multiple
+        // copies of the feature are visible, the popup appears
+        // over the copy being pointed to.
+        while (Math.abs(e.lngLat.lng - coordinates[0]) > 180) {
+            coordinates[0] += e.lngLat.lng > coordinates[0] ? 360 : -360;
+        }
+
+        new mapboxgl.Popup()
+            .setLngLat(coordinates)
+            .setHTML(`<h3>${title}</h3>${description}`)
+            .addTo(map);
+
+    }
+
+
+    function mouseMove(e) {
+        var features = map.queryRenderedFeatures(e.point, {
+            layers: ['cluster-pins']
+        });
+        map.getCanvas().style.cursor = (features.length) ? 'pointer' : '';
+    }
+
+
+    function autocomplete(inp, data) {
+        /*the autocomplete function takes two arguments,
+                    the text field element and an array of possible autocompleted values:*/
+        var currentFocus;
+        /*execute a function when someone writes in the text field:*/
+        inp.addEventListener("input", function (e) {
+            var a, b, i, val = this.value;
+            /*close any already open lists of autocompleted values*/
+            closeAllLists();
+            if (!val) { return false; }
+            currentFocus = -1;
+            /*create a DIV element that will contain the items (values):*/
+            a = document.createElement("DIV");
+            a.setAttribute("id", this.id + "autocomplete-list");
+            a.setAttribute("class", "autocomplete-items");
+            /*append the DIV element as a child of the autocomplete container:*/
+            this.parentNode.appendChild(a);
+
+
+            const arr = data.map(i => i.text)
+            let counter = 0;
+
+            /*for each item in the array...*/
+            for (i = 0; i < arr.length; i++) {
+
+                /*check if the item starts with the same letters as the text field value:*/
+                //if (arr[i].substr(0, val.length).toUpperCase() == val.toUpperCase()) {
+
+                const search = arr[i].toUpperCase().search(val.toUpperCase())
+                if (search > -1) {
+                    /*create a DIV element for each matching element:*/
+                    b = document.createElement("DIV");
+                    /*make the matching letters bold:*/
+
+                    const text = arr[i].substr(0, search) + '<b>' + arr[i].substr(search, val.length) + '</b>' + arr[i].substr((search + val.length), arr[i].length)
+
+                    //b.innerHTML = "<strong>" + arr[i].substr(0, val.length) + "</strong>";
+                    //b.innerHTML += arr[i].substr(val.length);
+                    b.innerHTML = text
+                    /*insert a input field that will hold the current array item's value:*/
+                    b.innerHTML += "<input type='hidden' value='" + arr[i] + "'>";
+                    /*execute a function when someone clicks on the item value (DIV element):*/
+                    b.addEventListener("click", function (e) {
+                        /*insert the value for the autocomplete text field:*/
+                        inp.value = this.getElementsByTagName("input")[0].value.replaceAll('<br>', ' ');
+                        /*close the list of autocompleted values,
+                        (or any other open lists of autocompleted values:*/
+                        closeAllLists();
+
+                        const point = data.find(i => i.text === this.getElementsByTagName("input")[0].value);
+                        if (point) {
+                            map.flyTo({
+                                center: point.coord,
+                                zoom: 19,
+                                pitch: 50
+                            })
+                        }
+
+                    });
+                    if (counter > 20) return; // display forst 20 results
+                    a.appendChild(b);
+                    counter++;
+                }
+            }
+        });
+        /*execute a function presses a key on the keyboard:*/
+        inp.addEventListener("keydown", function (e) {
+            var x = document.getElementById(this.id + "autocomplete-list");
+            if (x) x = x.getElementsByTagName("div");
+            if (e.keyCode == 40) {
+                /*If the arrow DOWN key is pressed,
+                increase the currentFocus variable:*/
+                currentFocus++;
+                /*and and make the current item more visible:*/
+                addActive(x);
+            } else if (e.keyCode == 38) { //up
+                /*If the arrow UP key is pressed,
+                decrease the currentFocus variable:*/
+                currentFocus--;
+                /*and and make the current item more visible:*/
+                addActive(x);
+            } else if (e.keyCode == 13) {
+                /*If the ENTER key is pressed, prevent the form from being submitted,*/
+                e.preventDefault();
+                if (currentFocus > -1) {
+                    /*and simulate a click on the "active" item:*/
+                    if (x) x[currentFocus].click();
+                }
+            }
+        });
+        function addActive(x) {
+            /*a function to classify an item as "active":*/
+            if (!x) return false;
+            /*start by removing the "active" class on all items:*/
+            removeActive(x);
+            if (currentFocus >= x.length) currentFocus = 0;
+            if (currentFocus < 0) currentFocus = (x.length - 1);
+            /*add class "autocomplete-active":*/
+            x[currentFocus].classList.add("autocomplete-active");
+
+            console.log('x', x);
+        }
+        function removeActive(x) {
+            /*a function to remove the "active" class from all autocomplete items:*/
+            for (var i = 0; i < x.length; i++) {
+                x[i].classList.remove("autocomplete-active");
+            }
+        }
+        function closeAllLists(elmnt) {
+            /*close all autocomplete lists in the document,
+                        except the one passed as an argument:*/
+            var x = document.getElementsByClassName("autocomplete-items");
+            for (var i = 0; i < x.length; i++) {
+                if (elmnt != x[i] && elmnt != inp) {
+                    x[i].parentNode.removeChild(x[i]);
+                }
+            }
+        }
+        /*execute a function when someone clicks in the document:*/
+        document.addEventListener("click", function (e) {
+            closeAllLists(e.target);
+        });
+    }
+
+
+</script>
+
+</html>
