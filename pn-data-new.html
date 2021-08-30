@@ -267,6 +267,94 @@
             transform: rotate(45deg);
             -webkit-transform: rotate(45deg);
         }
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+        /* The side navigation menu */
+        .sidenav {
+            height: 100%;
+            /* 100% Full-height */
+            width: 0;
+            /* 0 width - change this with JavaScript */
+            position: fixed;
+            /* Stay in place */
+            z-index: 1;
+            /* Stay on top */
+            top: 0;
+            /* Stay at the top */
+            right: 0;
+            background-color: rgb(160, 160, 160);
+            /* Black*/
+            overflow-x: hidden;
+            /* Disable horizontal scroll */
+            padding-top: 60px;
+            /* Place content 60px from the top */
+            transition: 0.5s;
+            /* 0.5 second transition effect to slide in the sidenav */
+        }
+
+        /* The navigation menu links */
+        .sidenav a {
+            /* padding: 8px 8px 8px 32px; */
+            text-decoration: none;
+            color: WHITE;
+            display: block;
+            transition: 0.3s;
+        }
+
+        /* When you mouse over the navigation links, change their color */
+        .sidenav a:hover {
+            color: #f1f1f1;
+        }
+
+        /* Position and style the close button (top right corner) */
+        .sidenav .closebtn {
+            position: absolute;
+            top: 0;
+            right: 25px;
+            font-size: 36px;
+            margin-left: 50px;
+        }
+
+        /* Style page content - use this if you want to push the page content to the right when you open the side navigation */
+        #main {
+            transition: margin-left .5s;
+            padding: 20px;
+        }
+
+        .sideItem {
+            padding: 10px;
+            margin: 10px;
+            border: 1px solid #ccc;
+            cursor: pointer;
+        }
+
+        .sideItem:hover {
+            background-color: #c9c9c9;
+        }
+
+        /* On smaller screens, where height is less than 450px, change the style of the sidenav (less padding and a smaller font size) */
+        @media screen and (max-height: 450px) {
+            .sidenav {
+                padding-top: 15px;
+            }
+
+            .sidenav a {
+                font-size: 18px;
+            }
+        }
     </style>
 </head>
 
@@ -274,9 +362,16 @@
 
     <div id="map"></div>
 
+    <div id="mySidenav" class="sidenav">
+        <a href="javascript:void(0)" class="closebtn" onclick="closeNav()">&times;</a>
+        <div id="sideBarContent"></div>
+    </div>
+
+
     <div class="autocomplete" style="width:300px;">
         <input id="myInput" type="text" style="display:inline" name="myCountry" placeholder="Søk..."><button
-            id="showall" style="display:inline;height: 40px; padding:12px;border:1px solid gray; border-left: none; cursor:pointer"><i
+            id="showall"
+            style="display:inline;height: 40px; padding:12px;border:1px solid gray; border-left: none; cursor:pointer"><i
                 class="arrow down"></i></button>
     </div>
     <div id="logo">
@@ -440,7 +535,7 @@
         map.on('mouseleave', 'cluster-pins', mouseLeave);
         map.on('click', 'cluster-pins', mouseClick);
 
-        d3.csv("https://docs.google.com/spreadsheets/d/e/2PACX-1vSTc68nYOPZyxB36sBTO_9r9M2dk5H39NrSoC8wYwJKEToI9MKZ5LlaXiLSkEk4Eq31MbZcAJ8UAp2t/pub?output=csv")
+        d3.csv("https://docs.google.com/spreadsheets/d/e/2PACX-1vSTc68nYOPZyxB36sBTO_9r9M2dk5H39NrSoC8wYwJKEToI9MKZ5LlaXiLSkEk4Eq31MbZcAJ8UAp2t/pub?gid=1319917091&single=true&output=csv")
             .then(data => {
                 console.log('data', data);
                 mainData.push(...data);
@@ -457,6 +552,15 @@
             input.focus()
             input.value = "";
         }, 500)
+    })
+
+    document.addEventListener("click", e => {
+        console.log('111', 222, e);
+
+        if (e.target.classList.contains("moreInfo")) {
+            console.log('open slider');
+            openNav()
+        }
     })
 
     function mouseEnter() {
@@ -502,8 +606,10 @@
         // Copy coordinates array.
         const coordinates = e.features[0].geometry.coordinates.slice();
         const title = e.features[0].properties.title;
-        const description = e.features[0].properties.description;
+        const thumb = e.features[0].properties.Thumbail;
+        const data = e.features[0].properties;
 
+        console.log('data', data);
         // Ensure that if the map is zoomed out such that multiple
         // copies of the feature are visible, the popup appears
         // over the copy being pointed to.
@@ -511,9 +617,52 @@
             coordinates[0] += e.lngLat.lng > coordinates[0] ? 360 : -360;
         }
 
+
+        // sideBarContent.innerHTML = `<h3>${title}</h3>
+        // <h4>360<h4>
+        //     <a href="${data['360link1']}">360link1</a><br>
+        //     <a href="${data['360link2']}">360link2</a><br>
+        //     <a href="${data['360link3']}">360link3</a><br>
+        // <h4>CAD<h4>
+        //     <a href="${data['CADlink1']}">CADlink1</a><br>
+        //     <a href="${data['CADlink2']}">CADlink2</a><br>
+        //     <a href="${data['CADlink3']}">CADlink3</a><br>
+        // <h4>Annet<h4>
+        //     <a href="${data['Misclink1']}">Misclink1</a><br>
+        //     <a href="${data['Misclink2']}">Misclink2</a><br>
+        //     <a href="${data['Misclink3']}">Misclink3</a><br>
+        // <h4>Punktsky<h4>
+        //     <a href="${data['PClink1']}">PClink1</a><br>
+        //     <a href="${data['PClink2']}">PClink2</a><br>
+        //     <a href="${data['PClink3']}">PClink3 </a><br>
+        // `
+        sideBarContent.innerHTML = `<h3>${title}</h3>
+        <div style="padding-left:20px">
+            <h4>360<h4>
+                ${data['360link1']}<br>
+                ${data['360link2']}<br>
+                ${data['360link3']}<br>
+            <h4>CAD<h4>
+                ${data['CADlink1']}<br>
+                ${data['CADlink2']}<br>
+                ${data['CADlink3']}<br>
+            <h4>Annet<h4>
+                ${data['Misclink1']}<br>
+                ${data['Misclink2']}<br>
+                ${data['Misclink3']}<br>
+            <h4>Punktsky<h4>
+                ${data['PClink1']}<br>
+                ${data['PClink2']}<br>
+                ${data['PClink3']}<br>
+        </div>
+        `
+
         new mapboxgl.Popup()
             .setLngLat(coordinates)
-            .setHTML(`<h3>${title}</h3>${description}`)
+            .setHTML(`<h3>${title}</h3>
+                <img src="${thumb}" style="display:block;margin:10px;">
+                <button class="moreInfo">More info</button>
+            `)
             .addTo(map);
 
     }
@@ -524,6 +673,7 @@
         });
         map.getCanvas().style.cursor = (features.length) ? 'pointer' : '';
     }
+
 
 
     function autocomplete(inp, data) {
@@ -653,6 +803,14 @@
     }
 
 
+
+    function openNav() {
+        document.getElementById("mySidenav").style.width = "250px";
+    }
+
+    function closeNav() {
+        document.getElementById("mySidenav").style.width = "0";
+    }
 </script>
 
 </html>
